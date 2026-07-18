@@ -1,0 +1,12 @@
+{
+  "title": "@ossintel/insights",
+  "description": "Rule-based insight engine that converts OSS metrics into actionable findings, recommendations, and AI-ready summaries with minimal hallucination.",
+  "tagLine": "Rule-based insight engine that converts OSS metrics into actionable findings, recommendations, and AI-ready summaries with minimal hallucination.",
+  "lastModified": "2026-07-18T09:49:27.755Z",
+  "version": "0.0.0",
+  "root": true,
+  "icon": "LibraryBig",
+  "pages": [
+    "v0"
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "title": "Version 0.0.0",
+  "description": "Deterministic scoring engine for calculating OSS health, impact, risk, activity, and community metrics from normalized repository and ecosystem data."
+}

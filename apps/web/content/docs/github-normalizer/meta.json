@@ -1,0 +1,12 @@
+{
+  "title": "@ossintel/github-normalizer",
+  "description": "Typed utilities for fetching and normalizing GitHub REST and GraphQL data into a consistent domain model for analytics and reporting.",
+  "tagLine": "Typed utilities for fetching and normalizing GitHub REST and GraphQL data into a consistent domain model for analytics and reporting.",
+  "lastModified": "2026-07-18T09:49:25.647Z",
+  "version": "0.0.0",
+  "root": true,
+  "icon": "LibraryBig",
+  "pages": [
+    "v0"
+  ]
+}

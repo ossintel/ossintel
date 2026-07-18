@@ -6,7 +6,7 @@ import {
 
 function getRequestConfig(options?: GitHubFetchOptions) {
   const token =
-    options?.token ?? process.env.GITHUB_TOKEN ?? process.env.GITHUB_PAT;
+    options?.token ?? process.env["GITHUB_TOKEN"] ?? process.env["GITHUB_PAT"];
   const baseUrl = options?.baseUrl ?? "https://api.github.com";
 
   const headers: Record<string, string> = {
@@ -15,7 +15,7 @@ function getRequestConfig(options?: GitHubFetchOptions) {
   };
 
   if (token) {
-    headers.Authorization = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   return { baseUrl, headers };

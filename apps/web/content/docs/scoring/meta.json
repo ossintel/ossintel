@@ -1,0 +1,12 @@
+{
+  "title": "@ossintel/scoring",
+  "description": "Deterministic scoring engine for calculating OSS health, impact, risk, activity, and community metrics from normalized repository and ecosystem data.",
+  "tagLine": "Deterministic scoring engine for calculating OSS health, impact, risk, activity, and community metrics from normalized repository and ecosystem data.",
+  "lastModified": "2026-07-18T09:49:29.806Z",
+  "version": "0.0.0",
+  "root": true,
+  "icon": "LibraryBig",
+  "pages": [
+    "v0"
+  ]
+}

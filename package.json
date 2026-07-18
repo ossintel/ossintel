@@ -1,5 +1,5 @@
 {
-  "name": "turboforge",
+  "name": "ossintel",
   "private": true,
   "scripts": {
     "build": "turbo build",
