@@ -1,0 +1,64 @@
+{
+  "name": "@ossintel/github-normalizer",
+  "author": "Mayank Kumar Chaudhari <https://mayankchaudhari.com>",
+  "private": false,
+  "version": "0.0.0",
+  "description": "Typed utilities for fetching and normalizing GitHub REST and GraphQL data into a consistent domain model for analytics and reporting.",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mayank1513/ossintel",
+    "directory": "packages/github-normalizer"
+  },
+  "bugs": "https://github.com/mayank1513/ossintel/issues",
+  "homepage": "https://github.com/mayank1513/ossintel/blob/main/packages/github-normalizer/README.md",
+  "sideEffects": false,
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "tsup && gzip -c dist/index.js | wc -c",
+    "clean": "rm -rf dist",
+    "dev": "tsup --watch"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "tsup": "latest",
+    "typescript": "latest"
+  },
+  "forge": {
+    "aliases": [],
+    "icon": "LibraryBig",
+    "description": ""
+  },
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/mayank1513"
+    },
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/mayank1513"
+    }
+  ],
+  "keywords": [
+    "@ossintel/github-normalizer",
+    "turboforge"
+  ]
+}

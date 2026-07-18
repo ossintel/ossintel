@@ -9,7 +9,7 @@
     "debug:info": "node --experimental-strip-types ./tooling/scripts/debug-info.ts",
     "deps:update": "pnpm update -r --latest && node --experimental-strip-types ./tooling/scripts/sync-biome.ts",
     "format": "biome check . --write",
-    "gen": "node --experimental-strip-types ./node_modules/plop/bin/plop.js --plopfile tooling/generators/src/index.ts",
+    "gen": "plop --plopfile tooling/generators/src/index.mts",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "postinstall": "node --experimental-strip-types ./tooling/scripts/postinstall.ts",

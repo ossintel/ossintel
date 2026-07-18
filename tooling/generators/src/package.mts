@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import path from "node:path";
 import type { ActionType, PlopGeneratorConfig } from "plop";
-import { cwd, TEMPLATE_DIR } from "./utils";
+import { cwd, TEMPLATE_DIR } from "./utils.mts";
 
 interface InquirerDataType {
   type: "ui" | "lib" | "cli";

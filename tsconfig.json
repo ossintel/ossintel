@@ -25,9 +25,30 @@
     "noPropertyAccessFromIndexSignature": true,
 
     /* Path Mapping */
-    "paths": {}
+    "paths": {
+      "@ossintel/github-normalizer": [
+        "./packages/github-normalizer/src",
+        "./packages/github-normalizer/dist"
+      ],
+      "@ossintel/insights": [
+        "./packages/insights/src",
+        "./packages/insights/dist"
+      ],
+      "@ossintel/scoring": ["./packages/scoring/src", "./packages/scoring/dist"]
+    }
   },
-  "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts", "vitest.config.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.d.ts",
+    "vitest.config.ts",
+    "tooling/generators/src/index.mts",
+    "tooling/generators/src/component.mts",
+    "tooling/generators/src/example.mts",
+    "tooling/generators/src/hook.mts",
+    "tooling/generators/src/package.mts",
+    "tooling/generators/src/utils.mts"
+  ],
   "exclude": [
     "**/node_modules",
     "**/dist",
