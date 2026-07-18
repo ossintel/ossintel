@@ -76,6 +76,15 @@ importers:
       '@mayank1513/fork-me':
         specifier: ^2.1.3
         version: 2.1.3(@types/react@19.2.17)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)
+      '@ossintel/github-normalizer':
+        specifier: workspace:*
+        version: link:../../packages/github-normalizer
+      '@ossintel/insights':
+        specifier: workspace:*
+        version: link:../../packages/insights
+      '@ossintel/scoring':
+        specifier: workspace:*
+        version: link:../../packages/scoring
       '@promptshield/tiptap':
         specifier: latest
         version: 0.0.2(@tiptap/core@3.28.0(@tiptap/pm@3.28.0))(@tiptap/pm@3.28.0)
