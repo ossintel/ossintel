@@ -53,6 +53,7 @@ const updateCommitlint = async (scopes: string[]) => {
   const file = ".commitlintrc.json";
   if (!(await existsAsync(file))) return;
 
+  // biome-ignore lint/suspicious/noExplicitAny: required here
   const config = await readJson<any>(file);
 
   if (!config?.rules?.["scope-enum"]) return;
