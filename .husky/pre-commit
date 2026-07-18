@@ -22,7 +22,7 @@ fi
 
 # Run Biome (Lint/Format)
 echo "$FILES" | xargs -n 50 pnpm biome check --write --no-errors-on-unmatched
-# echo "$FILES" | xargs -n 50 pnpx @promptshield/cli --check --skipped for speed
+echo "$FILES" | xargs -n 50 pnpx @promptshield/cli --check
 
 git add $FILES
 
