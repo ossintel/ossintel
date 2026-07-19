@@ -84,7 +84,7 @@ for (const pkgDir of PKG_DOC_DIRS) {
   const pages = await readdir(path.join(DOCS_ROOT, pkgDir)).then((dirs) =>
     dirs
       .filter((dir) => /^v\d+$/.test(dir))
-      .toSorted((a, b) => parseInt(b.slice(1), 10) - parseInt(a.slice(1), 10)),
+      .sort((a, b) => parseInt(b.slice(1), 10) - parseInt(a.slice(1), 10)),
   );
 
   await Promise.all([

@@ -258,11 +258,10 @@ const getActions = (data: InquirerDataType): ActionType[] => {
     ...filesActions,
     {
       type: "append",
-      // @ts-expect-error -- improper type
       pattern: /(?<insertion> component exports)/,
       path: path.resolve(packagesDir, `${parentDir}index.ts`),
       template: 'export * from "./{{kebabCase name}}";',
-    },
+    } as any,
   ]);
 };
 

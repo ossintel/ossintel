@@ -304,7 +304,10 @@ const color = {
  *   Enter repo slug (user/repo) (my-org/my-repo):
  */
 export const prompt = async (question: string, defaultValue?: string) => {
-  const rl = readline.createInterface({ input, output });
+  const rl = readline.createInterface({
+    input: input as any,
+    output: output as any,
+  });
 
   const q = `${color.cyan}${question}${color.reset}`;
   const ghost = defaultValue
