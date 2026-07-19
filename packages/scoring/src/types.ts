@@ -20,3 +20,16 @@ export interface RepositoryScores {
   community: number;
   risk: number;
 }
+
+export interface NpmPackageStats {
+  name: string;
+  downloads: number;
+  stars?: number;
+}
+
+export interface IdentityScoringInputs {
+  repositories: NormalizedRepository[];
+  npmPackages?: NpmPackageStats[];
+}
+
+export type IdentityScores = RepositoryScores;

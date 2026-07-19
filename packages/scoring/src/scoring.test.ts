@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { calculateRepositoryScore } from "./scoring";
+import { calculateIdentityScore, calculateRepositoryScore } from "./scoring";
 import type { ScoringInputs } from "./types";
 
 const mockRepository = (
@@ -189,5 +189,47 @@ describe("scoring engine", () => {
     });
 
     expect(scores.risk).toBeDefined();
+  });
+
+  test("archived repository scoring - activity and health should be 0", () => {
+    const inputs: ScoringInputs = {
+      repository: mockRepository({
+        isArchived: true,
+        stargazersCount: 100,
+        forksCount: 50,
+      }),
+    };
+
+    const scores = calculateRepositoryScore(inputs);
+    expect(scores.health).toBe(0);
+    expect(scores.activity).toBe(0);
+    expect(scores.impact).toBeGreaterThan(0);
+  });
+
+  test("calculateIdentityScore - simple identity score aggregation", () => {
+    const repos = [
+      mockRepository({
+        stargazersCount: 100,
+        forksCount: 50,
+        isArchived: false,
+      }),
+      mockRepository({
+        stargazersCount: 200,
+        forksCount: 100,
+        isArchived: true,
+      }),
+    ];
+
+    const result = calculateIdentityScore({ repositories: repos });
+    expect(result.overall).toBeGreaterThan(0);
+    expect(result.impact).toBeGreaterThan(0);
+    expect(result.health).toBeGreaterThan(0);
+  });
+
+  test("calculateIdentityScore - empty repositories list should return zero scores", () => {
+    const result = calculateIdentityScore({ repositories: [] });
+    expect(result.overall).toBe(0);
+    expect(result.health).toBe(0);
+    expect(result.risk).toBe(100);
   });
 });
