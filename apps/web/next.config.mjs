@@ -12,7 +12,7 @@ const config = {
   rewrites: async () => [
     {
       source: "/namaste-demo",
-      destination: "https://youtu.be/AVXvVPlzLEA",
+      destination: "https://youtu.be/JePs5P7x00Q",
     },
     {
       source: "/namaste-pitchdeck",
