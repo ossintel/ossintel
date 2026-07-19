@@ -1,6 +1,8 @@
 import { githubFetch, githubFetchAll } from "./client";
 import type {
   GitHubFetchOptions,
+  InputDetectionResult,
+  LinkedIdentitySuggestions,
   NormalizedContributor,
   NormalizedDeveloper,
   NormalizedLanguage,
@@ -63,6 +65,7 @@ function normalizeRepository(raw: RawGitHubRepository): NormalizedRepository {
     openIssuesCount: raw.open_issues_count ?? 0,
     defaultBranch: raw.default_branch ?? "main",
     topics: raw.topics ?? [],
+    isArchived: raw.archived ?? false,
   };
 }
 
@@ -237,4 +240,150 @@ export async function fetchReleases(
     options,
   );
   return raws.map(normalizeRelease);
+}
+
+export async function fetchOrganization(
+  login: string,
+  options?: GitHubFetchOptions,
+): Promise<NormalizedOrganization> {
+  const raw = await githubFetch<RawGitHubOrganization>(
+    `/orgs/${login}`,
+    options,
+  );
+  return normalizeOrganization(raw);
+}
+
+export function detectInput(input: string): InputDetectionResult {
+  const trimmed = input.trim();
+
+  // 1. Check if it's a URL
+  try {
+    const url = new URL(
+      trimmed.startsWith("http") ? trimmed : `https://${trimmed}`,
+    );
+    const hostname = url.hostname.toLowerCase();
+
+    if (hostname.includes("github.com")) {
+      const parts = url.pathname.split("/").filter(Boolean);
+      if (parts.length === 1) {
+        return {
+          platform: "github",
+          type: "unknown",
+          owner: parts[0],
+          rawInput: trimmed,
+        };
+      }
+      if (parts.length >= 2) {
+        return {
+          platform: "github",
+          type: "repo",
+          owner: parts[0],
+          repo: parts[1],
+          rawInput: trimmed,
+        };
+      }
+    }
+
+    if (hostname.includes("npmjs.com")) {
+      const parts = url.pathname.split("/").filter(Boolean);
+      if (parts[0] === "package") {
+        return {
+          platform: "npm",
+          type: "package",
+          name: parts.slice(1).join("/"),
+          rawInput: trimmed,
+        };
+      }
+      if (parts[0].startsWith("~")) {
+        return {
+          platform: "npm",
+          type: "user",
+          name: parts[0].slice(1),
+          rawInput: trimmed,
+        };
+      }
+      if (parts[0].startsWith("@")) {
+        if (parts.length === 1) {
+          return {
+            platform: "npm",
+            type: "org",
+            name: parts[0],
+            rawInput: trimmed,
+          };
+        }
+        return {
+          platform: "npm",
+          type: "package",
+          name: `${parts[0]}/${parts[1]}`,
+          rawInput: trimmed,
+        };
+      }
+    }
+
+    if (hostname.includes("stackoverflow.com")) {
+      const parts = url.pathname.split("/").filter(Boolean);
+      if (parts[0] === "users" && parts[1]) {
+        return {
+          platform: "stackoverflow",
+          type: "user",
+          profileId: parts[1],
+          name: parts[2] || undefined,
+          rawInput: trimmed,
+        };
+      }
+    }
+  } catch {
+    // Treat as non-URL text
+  }
+
+  if (trimmed.includes("/")) {
+    const parts = trimmed.split("/");
+    return {
+      platform: "github",
+      type: "repo",
+      owner: parts[0],
+      repo: parts[1],
+      rawInput: trimmed,
+    };
+  }
+
+  return {
+    platform: "github",
+    type: "unknown",
+    owner: trimmed,
+    rawInput: trimmed,
+  };
+}
+
+export function suggestLinkedIdentities(
+  developer: NormalizedDeveloper,
+  _repositories: NormalizedRepository[],
+): LinkedIdentitySuggestions {
+  const suggestions: LinkedIdentitySuggestions = {};
+
+  const searchTargets = [
+    developer.blog,
+    developer.bio,
+    developer.company,
+  ].filter(Boolean) as string[];
+  const soRegex = /stackoverflow\.com\/users\/(\d+)\/([a-zA-Z0-9_-]+)?/;
+
+  for (const target of searchTargets) {
+    const match = target.match(soRegex);
+    if (match) {
+      suggestions.stackoverflow = {
+        profileId: match[1],
+        displayName: match[2] || developer.login,
+        url: `https://stackoverflow.com/users/${match[1]}/${match[2] || ""}`,
+      };
+      break;
+    }
+  }
+
+  suggestions.npm = {
+    username: developer.login,
+    url: `https://www.npmjs.com/~${developer.login}`,
+  };
+
+  return suggestions;
 }

@@ -2,13 +2,16 @@
 
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  detectInput,
   fetchContributors,
   fetchDeveloper,
   fetchLanguages,
+  fetchOrganization,
   fetchOrganizations,
   fetchReleases,
   fetchRepositories,
   fetchRepository,
+  suggestLinkedIdentities,
 } from "./github-normalizer";
 import { GitHubHttpError, GitHubRateLimitError } from "./types";
 
@@ -516,5 +519,86 @@ describe("github-normalizer", () => {
 
     const repos = await fetchRepositories("octocat");
     expect(repos).toEqual([]);
+  });
+
+  test("fetchOrganization - success", async () => {
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+      ok: true,
+      headers: createHeaders(),
+      json: async () => ({
+        id: 789,
+        login: "org-login",
+        name: "Org Name",
+        description: "Org description",
+        avatar_url: "https://avatar.url",
+        html_url: "https://html.url",
+        location: "Org Location",
+        email: "org@org.com",
+        blog: "https://org.org",
+        public_repos: 10,
+        followers: 100,
+        created_at: "2015-01-25T18:44:36Z",
+        updated_at: "2015-01-25T18:44:36Z",
+      }),
+    });
+
+    const org = await fetchOrganization("org-login");
+    expect(org.id).toBe(789);
+    expect(org.login).toBe("org-login");
+    expect(org.name).toBe("Org Name");
+  });
+
+  test("detectInput - repo, bare, and urls", () => {
+    const res1 = detectInput("facebook/react");
+    expect(res1.platform).toBe("github");
+    expect(res1.type).toBe("repo");
+    expect(res1.owner).toBe("facebook");
+    expect(res1.repo).toBe("react");
+
+    const res2 = detectInput("octocat");
+    expect(res2.platform).toBe("github");
+    expect(res2.type).toBe("unknown");
+    expect(res2.owner).toBe("octocat");
+
+    const res3 = detectInput("https://github.com/octocat");
+    expect(res3.platform).toBe("github");
+    expect(res3.type).toBe("unknown");
+    expect(res3.owner).toBe("octocat");
+
+    const res4 = detectInput("https://github.com/facebook/react");
+    expect(res4.platform).toBe("github");
+    expect(res4.type).toBe("repo");
+    expect(res4.owner).toBe("facebook");
+    expect(res4.repo).toBe("react");
+
+    const res5 = detectInput("https://www.npmjs.com/package/lodash");
+    expect(res5.platform).toBe("npm");
+    expect(res5.type).toBe("package");
+    expect(res5.name).toBe("lodash");
+
+    const res6 = detectInput("https://www.npmjs.com/~isaacs");
+    expect(res6.platform).toBe("npm");
+    expect(res6.type).toBe("user");
+    expect(res6.name).toBe("isaacs");
+
+    const res7 = detectInput("https://stackoverflow.com/users/12345/some-user");
+    expect(res7.platform).toBe("stackoverflow");
+    expect(res7.type).toBe("user");
+    expect(res7.profileId).toBe("12345");
+  });
+
+  test("suggestLinkedIdentities - suggestions based on metadata", () => {
+    const mockDev = {
+      login: "test-login",
+      blog: "https://stackoverflow.com/users/99999/test-user",
+      company: null,
+      bio: null,
+    } as any;
+
+    const suggestions = suggestLinkedIdentities(mockDev, []);
+    expect(suggestions.stackoverflow?.profileId).toBe("99999");
+    expect(suggestions.stackoverflow?.displayName).toBe("test-user");
+    expect(suggestions.npm?.username).toBe("test-login");
   });
 });

@@ -83,6 +83,7 @@ export interface RawGitHubRepository {
   open_issues_count?: number;
   default_branch?: string;
   topics?: string[];
+  archived?: boolean;
 }
 
 export interface RawGitHubOrganization {
@@ -175,6 +176,7 @@ export interface NormalizedRepository {
   openIssuesCount: number;
   defaultBranch: string;
   topics: string[];
+  isArchived: boolean;
 }
 
 export interface NormalizedOrganization {
@@ -224,4 +226,26 @@ export interface NormalizedRelease {
     id: number;
     avatarUrl: string;
   } | null;
+}
+
+export interface InputDetectionResult {
+  platform: "github" | "npm" | "stackoverflow" | "unknown";
+  type: "user" | "org" | "repo" | "package" | "unknown";
+  owner?: string;
+  repo?: string;
+  name?: string;
+  profileId?: string;
+  rawInput: string;
+}
+
+export interface LinkedIdentitySuggestions {
+  stackoverflow?: {
+    profileId: string;
+    displayName: string;
+    url: string;
+  };
+  npm?: {
+    username: string;
+    url: string;
+  };
 }
