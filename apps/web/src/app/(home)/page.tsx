@@ -1,5 +1,6 @@
 "use client";
 
+import { detectInput } from "@ossintel/github-normalizer";
 import {
   AlertTriangle,
   ArrowRight,
@@ -15,7 +16,6 @@ import { GithubIcon } from "@/components/icons";
 export default function HomePage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [type, setType] = useState<"repo" | "user">("repo");
   const [token, setToken] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,21 +32,35 @@ export default function HomePage() {
     }
 
     try {
-      let owner = "";
-      let repoName = "";
+      const detection = detectInput(query);
+      const externalBase = process.env.NEXT_PUBLIC_EXTERNAL_DASHBOARD_URL;
+      let targetPath = "";
 
-      if (type === "repo") {
-        const cleaned = query.replace("https://github.com/", "").trim();
-        const parts = cleaned.split("/");
-        if (parts.length < 2) {
-          throw new Error("Please enter a repository in owner/repo format");
+      if (detection.platform === "github") {
+        if (detection.type === "repo") {
+          targetPath = `/repo/${detection.owner}/${detection.repo}`;
+        } else {
+          targetPath = `/user/${detection.owner}`;
         }
-        owner = parts[0];
-        repoName = parts[1];
-        router.push(`/repo/${owner}/${repoName}`);
+      } else if (detection.platform === "npm") {
+        if (detection.type === "package") {
+          targetPath = `/repo/npm/${detection.name}`;
+        } else {
+          targetPath = `/user/${detection.name}`;
+        }
       } else {
-        owner = query.trim().replace("https://github.com/", "");
-        router.push(`/user/${owner}`);
+        const cleaned = query.trim();
+        if (cleaned.includes("/")) {
+          targetPath = `/repo/${cleaned}`;
+        } else {
+          targetPath = `/user/${cleaned}`;
+        }
+      }
+
+      if (externalBase) {
+        window.location.href = `${externalBase}${targetPath}`;
+      } else {
+        router.push(targetPath);
       }
     } catch (err: unknown) {
       const message =
@@ -62,11 +76,19 @@ export default function HomePage() {
       sessionStorage.removeItem("github_token");
     }
 
+    const externalBase = process.env.NEXT_PUBLIC_EXTERNAL_DASHBOARD_URL;
+    let targetPath = "";
     if (searchType === "repo") {
       const parts = q.split("/");
-      router.push(`/repo/${parts[0]}/${parts[1]}`);
+      targetPath = `/repo/${parts[0]}/${parts[1]}`;
     } else {
-      router.push(`/user/${q}`);
+      targetPath = `/user/${q}`;
+    }
+
+    if (externalBase) {
+      window.location.href = `${externalBase}${targetPath}`;
+    } else {
+      router.push(targetPath);
     }
   };
 
@@ -108,53 +130,33 @@ export default function HomePage() {
       <main className="relative max-w-7xl mx-auto px-6 py-20 z-10 flex-1 flex flex-col justify-center items-center gap-10">
         <section className="flex flex-col gap-8 text-center max-w-3xl mx-auto w-full">
           <div className="space-y-4">
-            <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent leading-none">
+            <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent leading-none animate-fade-in">
               Open Source Intelligence
             </h2>
             <p className="text-lg md:text-xl text-slate-400 max-w-xl mx-auto font-medium">
-              Objective ecosystem metrics, impact analysis, community health
-              metrics, and risks audits for GitHub developers and repositories.
+              Unified platform metrics, impact scorecards, active community
+              health, and security risk audits for developers, repositories, and
+              organizations.
             </p>
+            {process.env.NEXT_PUBLIC_EXTERNAL_DASHBOARD_URL && (
+              <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-xs font-semibold max-w-max mx-auto">
+                <span>
+                  Showcase Redirect: Analyses will open in the Vercel Cloud
+                  platform.
+                </span>
+              </div>
+            )}
           </div>
 
           <form
             onSubmit={handleAnalyze}
             className="p-1.5 bg-slate-900/95 border border-slate-800 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-2.5 w-full"
           >
-            <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 shrink-0 justify-center">
-              <button
-                type="button"
-                onClick={() => setType("repo")}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
-                  type === "repo"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                Repository
-              </button>
-              <button
-                type="button"
-                onClick={() => setType("user")}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
-                  type === "user"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/10"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                Developer
-              </button>
-            </div>
-
             <div className="flex-1 flex items-center gap-3 px-3 bg-slate-950/50 border border-slate-800 rounded-xl focus-within:border-indigo-500/50 transition-colors">
               <Search className="h-5 w-5 text-slate-500 shrink-0" />
               <input
                 type="text"
-                placeholder={
-                  type === "repo"
-                    ? "Enter repository (e.g. facebook/react or owner/repo)"
-                    : "Enter GitHub username (e.g. mayank1513)"
-                }
+                placeholder="Enter GitHub user, organization, repository, or npm package URL..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="bg-transparent border-0 outline-none w-full py-3.5 text-slate-200 placeholder:text-slate-600 text-sm font-medium"

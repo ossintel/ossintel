@@ -1,6 +1,12 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Building,
+  Sparkles,
+  User,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AINarrator } from "@/components/dashboard/ai-narrator";
@@ -13,11 +19,10 @@ import type { AnalysisData } from "@/lib/types";
 
 const STEPS = [
   "Establishing connection to GitHub APIs...",
-  "Retrieving maintainer profile metadata...",
-  "Analyzing contribution portfolio history...",
-  "Retrieving public repositories stats...",
-  "Running developer metrics scoring models...",
-  "Generating portfolio findings and recommendations...",
+  "Retrieving portfolio profile metadata...",
+  "Analyzing public repositories stats...",
+  "Running scoring models & metrics engine...",
+  "Generating recommendations & findings...",
   "Finalizing Open Source Intelligence report...",
 ];
 
@@ -31,12 +36,17 @@ export default function UserPage() {
   const [data, setData] = useState<AnalysisData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Identity aggregation state
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
+  const [linkedNpm, setLinkedNpm] = useState<string>("");
+  const [linkedSO, setLinkedSO] = useState<string>("");
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (loading) {
       interval = setInterval(() => {
         setLoadingStep((prev) => (prev < STEPS.length - 1 ? prev + 1 : prev));
-      }, 1200);
+      }, 1000);
     }
     return () => clearInterval(interval);
   }, [loading]);
@@ -46,17 +56,25 @@ export default function UserPage() {
 
     const fetchData = async () => {
       try {
+        setLoading(true);
         const token = sessionStorage.getItem("github_token") || "";
         const res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "user", owner: username, token }),
+          body: JSON.stringify({
+            query: username,
+            token,
+            selectedOrgs,
+            linkedNpm,
+            linkedSO,
+          }),
         });
         const result = await res.json();
-        if (!res.ok)
+        if (!res.ok) {
           throw new Error(
             result.error || "Failed to analyze developer portfolio",
           );
+        }
         setData(result);
       } catch (err: unknown) {
         const message =
@@ -69,7 +87,7 @@ export default function UserPage() {
       }
     };
     fetchData();
-  }, [username]);
+  }, [username, selectedOrgs, linkedNpm, linkedSO]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500/30">
@@ -105,7 +123,7 @@ export default function UserPage() {
             </div>
             <div className="space-y-2">
               <h3 className="text-lg font-bold">
-                Analyzing Developer portfolio @{username}...
+                Analyzing Portfolio @{username}...
               </h3>
               <p className="text-sm text-slate-400 max-w-sm h-12 flex items-center justify-center">
                 {STEPS[loadingStep]}
@@ -133,21 +151,175 @@ export default function UserPage() {
         )}
 
         {data && !loading && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column */}
-            <div className="lg:col-span-1 flex flex-col gap-6">
-              <OverviewCard data={data} />
-              <DimensionBreakdown scores={data.scores} />
+          <div className="space-y-8 animate-fade-in">
+            {/* Identity Badge Header */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                {data.type === "org" ? (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                    <Building className="h-3.5 w-3.5" /> Organization Profile
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                    <User className="h-3.5 w-3.5" /> Developer Maintainer
+                    Profile
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Right Column */}
-            <div className="lg:col-span-2 flex flex-col gap-8">
-              <AINarrator promptContext={data.promptContext} />
-              <FindingsList findings={data.findings} />
-              <RecommendationsGrid recommendations={data.recommendations} />
-              {data.repositories && (
-                <RepositoriesTable repositories={data.repositories} />
-              )}
+            {/* Suggestions Prompts */}
+            {data.type === "user" && data.metadata.suggestions && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {data.metadata.suggestions.npm && !linkedNpm && (
+                  <div className="p-5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex flex-col justify-between gap-4">
+                    <div>
+                      <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                        Suggested npm Identity
+                      </h4>
+                      <p className="text-sm text-slate-200 mt-1">
+                        Link npm account{" "}
+                        <strong>
+                          @{data.metadata.suggestions.npm.username}
+                        </strong>{" "}
+                        to aggregate package download metrics?
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLinkedNpm(
+                            data.metadata.suggestions?.npm?.username || "",
+                          )
+                        }
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const userOverride = prompt(
+                            "Enter custom npm username to override:",
+                          );
+                          if (userOverride) setLinkedNpm(userOverride);
+                        }}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all"
+                      >
+                        Override
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {data.metadata.suggestions.stackoverflow && !linkedSO && (
+                  <div className="p-5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex flex-col justify-between gap-4">
+                    <div>
+                      <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                        Suggested Stack Overflow Profile
+                      </h4>
+                      <p className="text-sm text-slate-200 mt-1">
+                        Link Stack Overflow profile ID{" "}
+                        <strong>
+                          {data.metadata.suggestions.stackoverflow.profileId}
+                        </strong>{" "}
+                        ({data.metadata.suggestions.stackoverflow.displayName})?
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLinkedSO(
+                            data.metadata.suggestions?.stackoverflow
+                              ?.profileId || "",
+                          )
+                        }
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const soOverride = prompt(
+                            "Enter custom Stack Overflow Profile ID to override:",
+                          );
+                          if (soOverride) setLinkedSO(soOverride);
+                        }}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all"
+                      >
+                        Override
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column */}
+              <div className="lg:col-span-1 flex flex-col gap-6">
+                <OverviewCard data={data} />
+                <DimensionBreakdown scores={data.scores} />
+
+                {/* Organization Selection checklist */}
+                {data.type === "user" &&
+                  data.metadata.organizations &&
+                  data.metadata.organizations.length > 0 && (
+                    <div className="p-6 bg-slate-900/90 border border-slate-800 rounded-3xl space-y-4 shadow-xl">
+                      <h4 className="text-sm font-bold text-slate-200">
+                        Include Organization Repositories
+                      </h4>
+                      <p className="text-xs text-slate-400">
+                        Select which organizations' repositories should
+                        contribute to your lifetime impact and scores.
+                      </p>
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                        {data.metadata.organizations.map((org) => (
+                          <label
+                            key={org.login}
+                            className="flex items-center gap-3 p-2.5 bg-slate-950/50 border border-slate-800/80 rounded-xl cursor-pointer hover:border-slate-700 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedOrgs.includes(org.login)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedOrgs([...selectedOrgs, org.login]);
+                                } else {
+                                  setSelectedOrgs(
+                                    selectedOrgs.filter((o) => o !== org.login),
+                                  );
+                                }
+                              }}
+                              className="rounded border-slate-800 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-slate-950 bg-slate-950"
+                            />
+                            {/* biome-ignore lint/performance/noImgElement: Github avatars are dynamic external resources loaded at runtime */}
+                            <img
+                              src={org.avatarUrl}
+                              alt={org.login}
+                              className="h-6 w-6 rounded-md object-cover"
+                            />
+                            <span className="text-xs font-semibold text-slate-200">
+                              @{org.login}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+              </div>
+
+              {/* Right Column */}
+              <div className="lg:col-span-2 flex flex-col gap-8">
+                <AINarrator promptContext={data.promptContext} />
+                <FindingsList findings={data.findings} />
+                <RecommendationsGrid recommendations={data.recommendations} />
+                {data.repositories && (
+                  <RepositoriesTable repositories={data.repositories} />
+                )}
+              </div>
             </div>
           </div>
         )}

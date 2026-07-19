@@ -1,5 +1,5 @@
 export interface AnalysisData {
-  type: "repo" | "user";
+  type: "repo" | "user" | "org";
   metadata: {
     name?: string;
     fullName?: string;
@@ -12,6 +12,7 @@ export interface AnalysisData {
     topics?: string[];
     defaultBranch?: string;
     isFork?: boolean;
+    isArchived?: boolean;
     htmlUrl?: string;
     pushedAt?: string;
     updatedAt?: string;
@@ -26,6 +27,15 @@ export interface AnalysisData {
     following?: number;
     publicRepos?: number;
     createdAt?: string;
+    organizations?: Array<{
+      login: string;
+      name: string | null;
+      avatarUrl: string;
+    }>;
+    suggestions?: {
+      stackoverflow?: { profileId: string; displayName: string; url: string };
+      npm?: { username: string; url: string };
+    };
   };
   scores: {
     overall: number;
