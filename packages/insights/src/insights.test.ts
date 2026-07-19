@@ -29,6 +29,7 @@ const mockRepository = (
   openIssuesCount: 5,
   defaultBranch: "main",
   topics: ["typescript", "oss"],
+  isArchived: false,
   ...overrides,
 });
 
