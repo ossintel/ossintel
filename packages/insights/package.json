@@ -3,7 +3,7 @@
   "author": "Mayank Kumar Chaudhari <https://mayankchaudhari.com>",
   "private": false,
   "version": "0.0.0",
-  "description": "Rule-based insight engine that converts OSS metrics into actionable findings, recommendations, and AI-ready summaries with minimal hallucination.",
+  "description": "Rule-based insight generation engine for open-source software audit, producing findings, risk mitigation plans, and prompt contexts.",
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -55,14 +55,16 @@
     {
       "type": "github",
       "url": "https://github.com/sponsors/mayank1513"
-    },
-    {
-      "type": "github",
-      "url": "https://github.com/sponsors/mayank1513"
     }
   ],
   "keywords": [
-    "@ossintel/insights",
+    "oss-insights",
+    "code-audits",
+    "risk-assessment",
+    "open-source-health",
+    "findings",
+    "recommendations",
+    "analytics-engine",
     "turboforge"
   ]
 }

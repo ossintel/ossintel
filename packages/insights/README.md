@@ -81,8 +81,9 @@ PromptContext
 
 ## ✨ Why @ossintel/insights?
 
--
--
+- **Actionable Context**: Translates raw numbers into human-readable warnings and highlight descriptions.
+- **AI-Ready Summaries**: Formats deterministic findings into prompt contexts ready for AI analysis, avoiding hallucinations.
+- **Pure & Fast**: Contains zero network or state dependencies, rendering insights instantly on the client side.
 
 ---
 
