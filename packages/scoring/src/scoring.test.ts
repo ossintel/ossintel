@@ -274,4 +274,105 @@ describe("scoring engine", () => {
     );
     expect(resultWithContrib.badges).toContain("Framework Contributor");
   });
+
+  test("calculateIdentityScore - sustained maintenance bonus validation", () => {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 2);
+
+    const repos = [
+      mockRepository({
+        createdAt: oneYearAgo.toISOString(),
+        pushedAt: new Date().toISOString(),
+        stargazersCount: 100,
+        forksCount: 10,
+        isArchived: false,
+      }),
+    ];
+
+    const result = calculateIdentityScore({ repositories: repos });
+    expect(result.factors.maintainer).toContain(
+      "Sustained long-term repository maintenance",
+    );
+    expect(result.evidence.maintainer).toContain(
+      "1 sustained maintenance projects",
+    );
+  });
+
+  test("calculateIdentityScore - dynamic repository caps validation", () => {
+    const repos = [mockRepository({ stargazersCount: 10 })];
+
+    // Contributor to a high star repo (e.g. facebook/react)
+    const resultHighStar = calculateIdentityScore({
+      repositories: repos,
+      externalContributions: Array.from({ length: 15 }, (_, i) => ({
+        title: `feat: change #${i}`,
+        htmlUrl: `https://github.com/facebook/react/pull/${i}`,
+        repoFullName: "facebook/react",
+        number: i,
+        state: "merged",
+        createdAt: new Date().toISOString(),
+        mergedAt: new Date().toISOString(),
+        type: "code",
+        targetRepoStars: 250000,
+        labels: [],
+      })),
+    });
+
+    // Contributor to a low star repo
+    const resultLowStar = calculateIdentityScore({
+      repositories: repos,
+      externalContributions: Array.from({ length: 15 }, (_, i) => ({
+        title: `feat: change #${i}`,
+        htmlUrl: `https://github.com/niche/project/pull/${i}`,
+        repoFullName: "niche/project",
+        number: i,
+        state: "merged",
+        createdAt: new Date().toISOString(),
+        mergedAt: new Date().toISOString(),
+        type: "code",
+        targetRepoStars: 10,
+        labels: [],
+      })),
+    });
+
+    // React has 250k stars, so its cap is 40. Niche has 10 stars, so its cap is 20.
+    // The points in high star should be capped at 40, while low star capped at 20.
+    expect(resultHighStar.contributor).toBeGreaterThan(
+      resultLowStar.contributor,
+    );
+  });
+
+  test("calculateIdentityScore - weekly NPM downloads and organization validation", () => {
+    const repos = [mockRepository({ name: "my-package", stargazersCount: 10 })];
+
+    const result = calculateIdentityScore({
+      repositories: repos,
+      npmPackages: [
+        {
+          name: "my-package",
+          downloads: 2000000, // 2M weekly downloads
+        },
+      ],
+      organizations: [
+        {
+          login: "my-org",
+          publicRepos: 5,
+          followers: 100,
+        },
+      ],
+    });
+
+    expect(result.influence).toBeGreaterThan(50);
+    expect(result.organization).toBeGreaterThan(0);
+    expect(
+      result.factors.influence.some((f) =>
+        f.includes("Strong download footprint"),
+      ),
+    ).toBe(true);
+    expect(
+      result.factors.organization.some((f) => f.includes("Active leadership")),
+    ).toBe(true);
+    expect(result.badges).toContain("1M npm Downloads");
+    expect(result.badges).toContain("OSS Founder");
+  });
 });
