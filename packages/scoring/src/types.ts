@@ -32,6 +32,31 @@ export interface IdentityScoringInputs {
   repositories: NormalizedRepository[];
   npmPackages?: NpmPackageStats[];
   externalContributions?: NormalizedContribution[];
+  organizations?: { publicRepos: number; followers?: number; stars?: number }[];
 }
 
-export type IdentityScores = RepositoryScores;
+export interface PillarEvidence {
+  maintainer: string[];
+  contributor: string[];
+  influence: string[];
+  organization: string[];
+}
+
+export interface PillarFactors {
+  maintainer: string[];
+  contributor: string[];
+  influence: string[];
+  organization: string[];
+}
+
+export interface IdentityScores {
+  overall: number;
+  maintainer: number;
+  contributor: number;
+  organization: number;
+  influence: number;
+  confidence: "High" | "Medium" | "Low";
+  evidence: PillarEvidence;
+  factors: PillarFactors;
+  badges: string[];
+}

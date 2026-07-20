@@ -223,18 +223,19 @@ describe("scoring engine", () => {
 
     const result = calculateIdentityScore({ repositories: repos });
     expect(result.overall).toBeGreaterThan(0);
-    expect(result.impact).toBeGreaterThan(0);
-    expect(result.health).toBeGreaterThan(0);
+    expect(result.maintainer).toBeGreaterThan(0);
+    expect(result.influence).toBeGreaterThan(0);
+    expect(result.evidence.maintainer.length).toBeGreaterThan(0);
   });
 
   test("calculateIdentityScore - empty repositories list should return zero scores", () => {
     const result = calculateIdentityScore({ repositories: [] });
     expect(result.overall).toBe(0);
-    expect(result.health).toBe(0);
-    expect(result.risk).toBe(100);
+    expect(result.maintainer).toBe(0);
+    expect(result.confidence).toBe("Low");
   });
 
-  test("calculateIdentityScore - external contributions should factor into scores", () => {
+  test("calculateIdentityScore - external contributions should factor into contributor and influence", () => {
     const repos = [
       mockRepository({
         stargazersCount: 10,
@@ -258,21 +259,19 @@ describe("scoring engine", () => {
           state: "merged",
           createdAt: "2024-01-01T00:00:00Z",
           mergedAt: "2024-01-02T00:00:00Z",
-          labels: ["bug"],
           type: "code",
           targetRepoStars: 220000,
+          labels: ["bug"],
         },
       ],
     });
 
-    expect(resultWithContrib.impact).toBeGreaterThan(
-      resultWithoutContrib.impact,
+    expect(resultWithContrib.contributor).toBeGreaterThan(
+      resultWithoutContrib.contributor,
     );
-    expect(resultWithContrib.activity).toBeGreaterThan(
-      resultWithoutContrib.activity,
+    expect(resultWithContrib.overall).toBeGreaterThan(
+      resultWithoutContrib.overall,
     );
-    expect(resultWithContrib.community).toBeGreaterThan(
-      resultWithoutContrib.community,
-    );
+    expect(resultWithContrib.badges).toContain("Framework Contributor");
   });
 });

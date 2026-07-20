@@ -1,3 +1,4 @@
+import type { NormalizedContribution } from "@ossintel/github-normalizer";
 import type {
   IdentityScores,
   IdentityScoringInputs,
@@ -175,128 +176,408 @@ export const calculateRepositoryScore = (
 export const calculateIdentityScore = (
   inputs: IdentityScoringInputs,
 ): IdentityScores => {
-  const { repositories, npmPackages, externalContributions } = inputs;
+  const {
+    repositories = [],
+    npmPackages = [],
+    externalContributions = [],
+    organizations = [],
+  } = inputs;
 
-  if (
-    repositories.length === 0 &&
-    (!externalContributions || externalContributions.length === 0)
-  ) {
-    return {
-      overall: 0,
-      health: 0,
-      impact: 0,
-      activity: 0,
-      community: 0,
-      risk: 100,
-    };
-  }
-
-  const totalStars = repositories.reduce(
+  const totalStarsCount = repositories.reduce(
     (acc, r) => acc + r.stargazersCount,
     0,
   );
-  const totalForks = repositories.reduce((acc, r) => acc + r.forksCount, 0);
-  const totalWatchers = repositories.reduce(
-    (acc, r) => acc + r.watchersCount,
+  const totalForksCount = repositories.reduce(
+    (acc, r) => acc + r.forksCount,
+    0,
+  );
+  const totalNpmDownloads = npmPackages.reduce(
+    (acc, p) => acc + p.downloads,
     0,
   );
 
-  const starScore = Math.min(100, Math.log10(totalStars + 1) * 20);
-  const forkScore = Math.min(100, Math.log10(totalForks + 1) * 25);
-  const watcherScore = Math.min(100, Math.log10(totalWatchers + 1) * 30);
-
-  // Calculate impact bonus based on the popularity of external contributions
-  const contribImpactBonus =
-    externalContributions && externalContributions.length > 0
-      ? Math.min(
-          30,
-          externalContributions.reduce((acc, c) => {
-            let tierWeight = 1.0;
-            if (c.targetRepoStars >= 20000) tierWeight = 5.0;
-            else if (c.targetRepoStars >= 2000) tierWeight = 3.0;
-
-            let qualityWeight = 1.0;
-            if (c.type === "docs") qualityWeight = 0.4;
-            else if (c.type === "test") qualityWeight = 1.2;
-            else if (c.type === "chore") qualityWeight = 0.5;
-
-            return acc + tierWeight * qualityWeight;
-          }, 0),
-        )
-      : 0;
-
-  let baseImpact =
-    starScore * 0.5 +
-    forkScore * 0.35 +
-    watcherScore * 0.15 +
-    contribImpactBonus;
-
-  if (npmPackages && npmPackages.length > 0) {
-    const totalDownloads = npmPackages.reduce((acc, p) => acc + p.downloads, 0);
-    const npmScore = Math.min(100, Math.log10(totalDownloads + 1) * 15);
-    baseImpact = baseImpact * 0.8 + npmScore * 0.2;
+  if (
+    repositories.length === 0 &&
+    externalContributions.length === 0 &&
+    npmPackages.length === 0 &&
+    organizations.length === 0
+  ) {
+    return {
+      overall: 0,
+      maintainer: 0,
+      contributor: 0,
+      organization: 0,
+      influence: 0,
+      confidence: "Low",
+      evidence: {
+        maintainer: [],
+        contributor: [],
+        influence: [],
+        organization: [],
+      },
+      factors: {
+        maintainer: [],
+        contributor: [],
+        influence: [],
+        organization: [],
+      },
+      badges: [],
+    };
   }
-  const impact = Math.min(100, Math.round(baseImpact));
 
+  // 1. Maintainer Score (What you build)
   const activeRepos = repositories.filter((r) => !r.isArchived);
+  let totalWeight = 0;
+  let weightedHealthSum = 0;
+  let sustainedCount = 0;
 
-  let health = 0;
-  let activity = 0;
-  let community = 0;
-  let risk = 100;
+  for (const repo of activeRepos) {
+    const scores = calculateRepositoryScore({ repository: repo });
+    const baseHealth = scores.health;
 
-  if (activeRepos.length > 0) {
-    const repoScoresList = activeRepos.map((r) =>
-      calculateRepositoryScore({ repository: r }),
+    const pushAgeDays =
+      (Date.now() - new Date(repo.pushedAt).getTime()) / (1000 * 60 * 60 * 24);
+    const createdAgeDays =
+      (Date.now() - new Date(repo.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+    const isSustained = createdAgeDays > 365 && pushAgeDays < 90;
+
+    const repoHealth = isSustained
+      ? Math.min(100, baseHealth + 10)
+      : baseHealth;
+    if (isSustained) {
+      sustainedCount++;
+    }
+
+    const repoNpm = npmPackages.find(
+      (pkg) =>
+        pkg.name.toLowerCase() === repo.name.toLowerCase() ||
+        pkg.name.toLowerCase().endsWith(`/${repo.name.toLowerCase()}`),
     );
-    health = Math.round(
-      repoScoresList.reduce((acc, s) => acc + s.health, 0) /
-        repoScoresList.length,
-    );
-    activity = Math.round(
-      repoScoresList.reduce((acc, s) => acc + s.activity, 0) /
-        repoScoresList.length,
-    );
-    community = Math.round(
-      repoScoresList.reduce((acc, s) => acc + s.community, 0) /
-        repoScoresList.length,
-    );
-    risk = Math.round(
-      repoScoresList.reduce((acc, s) => acc + s.risk, 0) /
-        repoScoresList.length,
-    );
-  } else if (externalContributions && externalContributions.length > 0) {
-    health = 80;
-    risk = 20;
+    const npmDownloads = repoNpm?.downloads || 0;
+
+    const weight =
+      Math.log10(repo.stargazersCount + repo.forksCount + 1) +
+      1 +
+      Math.log10(npmDownloads + 1) * 1.5;
+    weightedHealthSum += repoHealth * weight;
+    totalWeight += weight;
   }
 
-  // Activity and community bonus from external contributions
-  const contribActivityBonus =
-    externalContributions && externalContributions.length > 0
-      ? Math.min(20, externalContributions.length * 4)
-      : 0;
-  const contribCommunityBonus =
-    externalContributions && externalContributions.length > 0
-      ? Math.min(15, externalContributions.length * 3)
-      : 0;
+  const maintainer =
+    totalWeight > 0 ? Math.round(weightedHealthSum / totalWeight) : 0;
 
-  activity = Math.min(100, activity + contribActivityBonus);
-  community = Math.min(100, community + contribCommunityBonus);
+  // 2. Contributor Score (What you improve upstream)
+  const repoPRsMap: Record<
+    string,
+    {
+      repoFullName: string;
+      prs: NormalizedContribution[];
+      stars: number;
+    }
+  > = {};
 
-  const overall = Math.round(
-    health * 0.3 +
-      impact * 0.25 +
-      activity * 0.2 +
-      community * 0.15 +
-      (100 - risk) * 0.1,
+  for (const c of externalContributions) {
+    if (!repoPRsMap[c.repoFullName]) {
+      repoPRsMap[c.repoFullName] = {
+        repoFullName: c.repoFullName,
+        prs: [],
+        stars: c.targetRepoStars || 0,
+      };
+    }
+    repoPRsMap[c.repoFullName].prs.push(c);
+  }
+
+  let totalContributorPoints = 0;
+  const contributorBreakdown: Array<{ repo: string; points: number }> = [];
+
+  for (const repoName of Object.keys(repoPRsMap)) {
+    const item = repoPRsMap[repoName];
+    const { prs, stars } = item;
+
+    const importance = Math.log10(stars + 1) / 4;
+    const cap = 20 + Math.round(Math.min(1.0, importance) * 20);
+
+    const sortedPRs = [...prs].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    const firstPR = sortedPRs[0];
+    let qualityMultiplier = 1.0;
+    if (firstPR.type === "docs") qualityMultiplier = 0.4;
+    else if (firstPR.type === "test") qualityMultiplier = 1.2;
+    else if (firstPR.type === "chore") qualityMultiplier = 0.5;
+
+    let basePoints = Math.min(1.0, importance) * qualityMultiplier * 15;
+    basePoints = basePoints + Math.max(0, importance - 1.0) * 10;
+
+    let subsequentPoints = 0;
+    for (let i = 1; i < sortedPRs.length; i++) {
+      const pr = sortedPRs[i];
+      let subQual = 1.0;
+      if (pr.type === "docs") subQual = 0.4;
+      else if (pr.type === "test") subQual = 1.2;
+      else if (pr.type === "chore") subQual = 0.5;
+      subsequentPoints += subQual * 5;
+    }
+    subsequentPoints = subsequentPoints * 0.5;
+
+    const repoPoints = Math.min(cap, Math.round(basePoints + subsequentPoints));
+    totalContributorPoints += repoPoints;
+    contributorBreakdown.push({ repo: repoName, points: repoPoints });
+  }
+
+  const contributor = Math.min(100, totalContributorPoints);
+
+  // 3. Organization Leadership (What you lead)
+  const activeOrgs = organizations.filter(
+    (o) => (o.publicRepos || 0) > 0 || (o.followers || 0) > 0,
   );
+  const activeOrgsCount = activeOrgs.length;
+
+  let orgLeadershipSum = 0;
+  for (const org of activeOrgs) {
+    const orgStars = org.stars || 0;
+    const orgFollowers = org.followers || 0;
+    const orgRepos = org.publicRepos || 0;
+    const orgWeight = Math.log10(orgFollowers + orgRepos + orgStars + 1) * 8;
+    orgLeadershipSum += orgWeight;
+  }
+
+  const organizationScore = Math.min(
+    100,
+    Math.round(activeOrgsCount * 20 + orgLeadershipSum),
+  );
+
+  // 4. Influence Score (Downstream reach)
+  const starWeight = Math.log10(totalStarsCount + 1) * 20;
+  const forkWeight = Math.log10(totalForksCount + 1) * 20;
+  const npmWeight = Math.log10(totalNpmDownloads + 1) * 20;
+
+  const influence = Math.min(
+    100,
+    Math.round(starWeight + forkWeight + npmWeight),
+  );
+
+  // 5. Confidence Score
+  const totalReposCount = repositories.length;
+  const totalPRsCount = externalContributions.length;
+
+  let confidence: "High" | "Medium" | "Low" = "Low";
+  if (
+    totalReposCount >= 10 ||
+    totalPRsCount >= 15 ||
+    totalNpmDownloads >= 5000
+  ) {
+    confidence = "High";
+  } else if (totalReposCount >= 3 || totalPRsCount >= 3) {
+    confidence = "Medium";
+  }
+
+  // 6. Overall Reputation Score
+  let overall = 0;
+  if (activeOrgsCount > 0) {
+    overall = Math.round(
+      maintainer * 0.35 +
+        contributor * 0.3 +
+        organizationScore * 0.15 +
+        influence * 0.2,
+    );
+  } else {
+    overall = Math.round(
+      maintainer * 0.45 + contributor * 0.35 + influence * 0.2,
+    );
+  }
+
+  // 7. Generic Badge Checks
+  const badges: string[] = [];
+  const contributedToCore = externalContributions.some(
+    (c) => c.targetRepoStars >= 20000,
+  );
+  if (contributedToCore) {
+    badges.push("Framework Contributor");
+  }
+  if (activeOrgsCount >= 1) {
+    badges.push("OSS Founder");
+  }
+  if (npmPackages.length >= 1) {
+    badges.push("Package Publisher");
+  }
+  const testPRsCount = externalContributions.filter(
+    (c) => c.type === "test",
+  ).length;
+  if (testPRsCount >= 5) {
+    badges.push("Test Champion");
+  }
+  const securityPR = externalContributions.some((c) =>
+    /\b(security|vuln|cve|fix|patch)\b/i.test(c.title),
+  );
+  if (securityPR) {
+    badges.push("Security Champion");
+  }
+  if (totalPRsCount >= 15) {
+    badges.push("Prodigious Contributor");
+  }
+  if (totalStarsCount >= 1000) {
+    badges.push("1k Stars Earned");
+  }
+  if (totalNpmDownloads >= 1000000) {
+    badges.push("1M npm Downloads");
+  }
+
+  // 8. Factual Evidence List
+  const maintainerEvidence = [
+    `${activeRepos.length} active repositories`,
+    `${maintainer}% average repository health`,
+  ];
+  if (sustainedCount > 0) {
+    maintainerEvidence.push(`${sustainedCount} sustained maintenance projects`);
+  }
+  if (activeRepos.length > 0) {
+    const flagship = [...activeRepos].sort(
+      (a, b) => b.stargazersCount - a.stargazersCount,
+    )[0];
+    maintainerEvidence.push(`Flagship project: ${flagship.name}`);
+  }
+
+  const contributorEvidence = [`${totalPRsCount} merged pull requests`];
+  if (contributorBreakdown.length > 0) {
+    const topUpstream = [...contributorBreakdown].sort(
+      (a, b) => b.points - a.points,
+    )[0];
+    contributorEvidence.push(`Top upstream: ${topUpstream.repo}`);
+  }
+  if (totalPRsCount > 0) {
+    const code = externalContributions.filter((c) => c.type === "code").length;
+    const docs = externalContributions.filter((c) => c.type === "docs").length;
+    const test = externalContributions.filter((c) => c.type === "test").length;
+    contributorEvidence.push(
+      `Classified: ${code} code, ${docs} docs, ${test} tests`,
+    );
+  }
+
+  const influenceEvidence = [
+    `${totalStarsCount.toLocaleString()} total stargazers`,
+    `${totalForksCount.toLocaleString()} repository forks`,
+  ];
+  if (totalNpmDownloads > 0) {
+    influenceEvidence.push(
+      `${totalNpmDownloads.toLocaleString()} weekly npm downloads`,
+    );
+  }
+
+  const orgEvidence = [
+    `${activeOrgsCount} managed organizations`,
+    `${organizations.reduce((acc, o) => acc + (o.publicRepos || 0), 0)} collective repositories`,
+  ];
+  const totalOrgFollowers = organizations.reduce(
+    (acc, o) => acc + (o.followers || 0),
+    0,
+  );
+  if (totalOrgFollowers > 0) {
+    orgEvidence.push(
+      `${totalOrgFollowers.toLocaleString()} total organization followers`,
+    );
+  }
+
+  const evidence = {
+    maintainer: maintainerEvidence,
+    contributor: contributorEvidence,
+    influence: influenceEvidence,
+    organization: orgEvidence,
+  };
+
+  // 9. Positive/Negative Factors
+  const maintainerFactors: string[] = [];
+  const contributorFactors: string[] = [];
+  const influenceFactors: string[] = [];
+  const orgFactors: string[] = [];
+
+  if (maintainer >= 80) {
+    maintainerFactors.push("Active flagship projects with excellent health");
+  }
+  if (sustainedCount > 0) {
+    maintainerFactors.push("Sustained long-term repository maintenance");
+  }
+  const archived = repositories.filter((r) => r.isArchived).length;
+  if (archived > 0) {
+    maintainerFactors.push("Some repositories are archived/inactive");
+  }
+  if (maintainerFactors.length === 0) {
+    maintainerFactors.push("Moderate repository activity and health");
+  }
+
+  if (totalPRsCount > 0) {
+    contributorFactors.push(`+ ${totalPRsCount} merged pull requests`);
+  }
+  if (contributedToCore) {
+    contributorFactors.push("+ PRs merged into high-importance frameworks");
+  }
+  const topUpstreamRepo = contributorBreakdown.sort(
+    (a, b) => b.points - a.points,
+  )[0];
+  if (
+    topUpstreamRepo &&
+    (repoPRsMap[topUpstreamRepo.repo]?.prs.length || 0) > 2
+  ) {
+    contributorFactors.push(
+      `+ Repeat contributor bonus for ${topUpstreamRepo.repo}`,
+    );
+  }
+  if (totalPRsCount === 0) {
+    contributorFactors.push("- No external repository contributions found");
+  } else {
+    const hasRecentContrib = externalContributions.some(
+      (c) =>
+        (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24) <
+        90,
+    );
+    if (!hasRecentContrib) {
+      contributorFactors.push("- No recent upstream activity (past 90 days)");
+    }
+  }
+
+  if (totalStarsCount >= 500) {
+    influenceFactors.push(
+      `+ High community interest (${totalStarsCount} stars)`,
+    );
+  }
+  if (totalNpmDownloads >= 10000) {
+    influenceFactors.push(
+      `+ Strong download footprint (${totalNpmDownloads.toLocaleString()} weekly downloads)`,
+    );
+  }
+  if (influenceFactors.length === 0) {
+    influenceFactors.push("Growing library adoption and ecosystem footprint");
+  }
+
+  if (activeOrgsCount > 0) {
+    orgFactors.push(`+ Active leadership in ${activeOrgsCount} organizations`);
+  }
+  if (totalOrgFollowers > 100) {
+    orgFactors.push(
+      `+ High organization follower presence (${totalOrgFollowers})`,
+    );
+  }
+  if (activeOrgsCount === 0) {
+    orgFactors.push("- No active organization leadership detected");
+  }
+
+  const factors = {
+    maintainer: maintainerFactors,
+    contributor: contributorFactors,
+    influence: influenceFactors,
+    organization: orgFactors,
+  };
 
   return {
     overall,
-    health,
-    impact,
-    activity,
-    community,
-    risk,
+    maintainer,
+    contributor,
+    organization: organizationScore,
+    influence,
+    confidence,
+    evidence,
+    factors,
+    badges,
   };
 };
