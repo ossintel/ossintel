@@ -1,6 +1,9 @@
 "use client";
 
-import type { NormalizedRepository } from "@ossintel/github-normalizer";
+import type {
+  NormalizedContribution,
+  NormalizedRepository,
+} from "@ossintel/github-normalizer";
 import { generateIdentityInsights } from "@ossintel/insights";
 import {
   calculateIdentityScore,
@@ -17,6 +20,7 @@ interface DeveloperScoresProps {
   linkedSO: string;
   userLogin: string;
   userName: string;
+  externalContributions?: NormalizedContribution[];
 }
 
 export const useDeveloperScores = ({
@@ -27,6 +31,7 @@ export const useDeveloperScores = ({
   linkedSO,
   userLogin,
   userName,
+  externalContributions,
 }: DeveloperScoresProps) => {
   return useMemo(() => {
     const orgRepos = orgsQueries
@@ -46,6 +51,7 @@ export const useDeveloperScores = ({
     const scores = calculateIdentityScore({
       repositories: combinedRepos,
       npmPackages,
+      externalContributions,
     });
 
     const insightsResult = generateIdentityInsights(combinedRepos, scores, {
@@ -69,12 +75,31 @@ export const useDeveloperScores = ({
       };
     });
 
+    const contribScores = (externalContributions || []).map((c) => {
+      const starScore = Math.min(100, Math.log10(c.targetRepoStars + 1) * 20);
+      return {
+        repoName: c.repoFullName.split("/")[1] || c.repoFullName,
+        fullName: c.repoFullName,
+        scores: {
+          overall: Math.round(starScore),
+          risk: 10,
+        },
+        stars: c.targetRepoStars,
+        forks: 0,
+        isContribution: true,
+        title: c.title,
+        htmlUrl: c.htmlUrl,
+        type: c.type,
+      };
+    });
+
     return {
       scores,
       findings: insightsResult.findings,
       recommendations: insightsResult.recommendations,
       promptContext: insightsResult.promptContext,
       repositories: repoScores,
+      externalContributions: contribScores,
     };
   }, [
     userRepos,
@@ -84,5 +109,6 @@ export const useDeveloperScores = ({
     linkedSO,
     userLogin,
     userName,
+    externalContributions,
   ]);
 };

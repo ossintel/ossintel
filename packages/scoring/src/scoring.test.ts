@@ -233,4 +233,46 @@ describe("scoring engine", () => {
     expect(result.health).toBe(0);
     expect(result.risk).toBe(100);
   });
+
+  test("calculateIdentityScore - external contributions should factor into scores", () => {
+    const repos = [
+      mockRepository({
+        stargazersCount: 10,
+        forksCount: 2,
+        isArchived: false,
+      }),
+    ];
+
+    const resultWithoutContrib = calculateIdentityScore({
+      repositories: repos,
+    });
+
+    const resultWithContrib = calculateIdentityScore({
+      repositories: repos,
+      externalContributions: [
+        {
+          title: "fix: resolve memory leak",
+          htmlUrl: "https://github.com/facebook/react/pull/1",
+          repoFullName: "facebook/react",
+          number: 1,
+          state: "merged",
+          createdAt: "2024-01-01T00:00:00Z",
+          mergedAt: "2024-01-02T00:00:00Z",
+          labels: ["bug"],
+          type: "code",
+          targetRepoStars: 220000,
+        },
+      ],
+    });
+
+    expect(resultWithContrib.impact).toBeGreaterThan(
+      resultWithoutContrib.impact,
+    );
+    expect(resultWithContrib.activity).toBeGreaterThan(
+      resultWithoutContrib.activity,
+    );
+    expect(resultWithContrib.community).toBeGreaterThan(
+      resultWithoutContrib.community,
+    );
+  });
 });

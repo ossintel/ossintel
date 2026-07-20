@@ -54,7 +54,14 @@ export const calculateCommunityScore = (
   repository: ScoringInputs["repository"],
   contributors: ScoringInputs["contributors"],
 ): number => {
-  const contributorsCount = contributors ? contributors.length : 0;
+  // Throttling/rate-limit fallback: estimate contributor base from stargazers if empty
+  const contributorsCount =
+    contributors && contributors.length > 0
+      ? contributors.length
+      : Math.max(
+          1,
+          Math.min(100, Math.floor(Math.sqrt(repository.stargazersCount))),
+        );
   const contributorScore = Math.min(
     100,
     Math.log10(contributorsCount + 1) * 50,
@@ -109,7 +116,14 @@ export const calculateRiskScore = (
   else if (diffDays > 180) riskScore += 20;
   else if (diffDays > 90) riskScore += 10;
 
-  const contributorCount = contributors ? contributors.length : 1;
+  // Throttling/rate-limit fallback: estimate contributor base from stargazers if empty
+  const contributorCount =
+    contributors && contributors.length > 0
+      ? contributors.length
+      : Math.max(
+          1,
+          Math.min(100, Math.floor(Math.sqrt(repository.stargazersCount))),
+        );
   if (contributorCount <= 1) riskScore += 30;
   else if (contributorCount <= 3) riskScore += 20;
   else if (contributorCount <= 5) riskScore += 10;
@@ -161,9 +175,12 @@ export const calculateRepositoryScore = (
 export const calculateIdentityScore = (
   inputs: IdentityScoringInputs,
 ): IdentityScores => {
-  const { repositories, npmPackages } = inputs;
+  const { repositories, npmPackages, externalContributions } = inputs;
 
-  if (repositories.length === 0) {
+  if (
+    repositories.length === 0 &&
+    (!externalContributions || externalContributions.length === 0)
+  ) {
     return {
       overall: 0,
       health: 0,
@@ -187,14 +204,39 @@ export const calculateIdentityScore = (
   const starScore = Math.min(100, Math.log10(totalStars + 1) * 20);
   const forkScore = Math.min(100, Math.log10(totalForks + 1) * 25);
   const watcherScore = Math.min(100, Math.log10(totalWatchers + 1) * 30);
-  let baseImpact = starScore * 0.5 + forkScore * 0.35 + watcherScore * 0.15;
+
+  // Calculate impact bonus based on the popularity of external contributions
+  const contribImpactBonus =
+    externalContributions && externalContributions.length > 0
+      ? Math.min(
+          30,
+          externalContributions.reduce((acc, c) => {
+            let tierWeight = 1.0;
+            if (c.targetRepoStars >= 20000) tierWeight = 5.0;
+            else if (c.targetRepoStars >= 2000) tierWeight = 3.0;
+
+            let qualityWeight = 1.0;
+            if (c.type === "docs") qualityWeight = 0.4;
+            else if (c.type === "test") qualityWeight = 1.2;
+            else if (c.type === "chore") qualityWeight = 0.5;
+
+            return acc + tierWeight * qualityWeight;
+          }, 0),
+        )
+      : 0;
+
+  let baseImpact =
+    starScore * 0.5 +
+    forkScore * 0.35 +
+    watcherScore * 0.15 +
+    contribImpactBonus;
 
   if (npmPackages && npmPackages.length > 0) {
     const totalDownloads = npmPackages.reduce((acc, p) => acc + p.downloads, 0);
     const npmScore = Math.min(100, Math.log10(totalDownloads + 1) * 15);
     baseImpact = baseImpact * 0.8 + npmScore * 0.2;
   }
-  const impact = Math.round(baseImpact);
+  const impact = Math.min(100, Math.round(baseImpact));
 
   const activeRepos = repositories.filter((r) => !r.isArchived);
 
@@ -223,7 +265,23 @@ export const calculateIdentityScore = (
       repoScoresList.reduce((acc, s) => acc + s.risk, 0) /
         repoScoresList.length,
     );
+  } else if (externalContributions && externalContributions.length > 0) {
+    health = 80;
+    risk = 20;
   }
+
+  // Activity and community bonus from external contributions
+  const contribActivityBonus =
+    externalContributions && externalContributions.length > 0
+      ? Math.min(20, externalContributions.length * 4)
+      : 0;
+  const contribCommunityBonus =
+    externalContributions && externalContributions.length > 0
+      ? Math.min(15, externalContributions.length * 3)
+      : 0;
+
+  activity = Math.min(100, activity + contribActivityBonus);
+  community = Math.min(100, community + contribCommunityBonus);
 
   const overall = Math.round(
     health * 0.3 +

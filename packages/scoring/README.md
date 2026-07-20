@@ -83,6 +83,36 @@ No external dependencies should affect score calculation.
 
 ---
 
+## 🌍 Open Source Ecosystem Impact Engine
+
+The Ecosystem Impact Engine measures developer impact beyond owned repositories, focusing on contributions to external projects.
+
+### Heuristics Classification Pipeline
+
+```text
+[User Merged PR]
+       │
+       ├──► Contains "typo", "readme", "docs" in Title/Labels? ─────► [Docs / Typo Fix] (Weight: 0.4x)
+       ├──► Contains "test", "spec", "qa" in Title/Labels? ────────► [Test Contribution] (Weight: 1.2x)
+       ├──► Contains "chore", "dependencies" in Title/Labels? ──────► [Chore / Dependency] (Weight: 0.5x)
+       └──► Default Code change ────────────────────────────────────► [Core Code Contribution] (Weight: 1.0x)
+```
+
+### Weighting Matrix
+
+Merged pull requests are weighted according to target repository popularity and quality multipliers:
+
+| Target Repo Stargazers | Tier Category | Base Weight | Multiplier Applied |
+|---|---|---|---|
+| **&ge; 20,000 Stars** | **Tier 1 (Frameworks)** | 5.0 | Quality Multiplier (Docs: 0.4, Test: 1.2, Chore: 0.5, Code: 1.0) |
+| **&ge; 2,000 Stars** | **Tier 2 (Medium OSS)** | 3.0 | Quality Multiplier |
+| **&lt; 2,000 Stars** | **Tier 3 (Small OSS)** | 1.0 | Quality Multiplier |
+
+The resulting Ecosystem Contribution Score (\(S_{eco}\)) is aggregated as:
+\[S_{eco} = \min\left(100, \sum (BaseWeight \times QualityMultiplier)\right)\]
+
+---
+
 ## 📦 Installation
 
 ```bash

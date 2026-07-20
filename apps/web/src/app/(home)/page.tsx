@@ -1,7 +1,7 @@
 "use client";
 
 import { detectInput } from "@ossintel/github-normalizer";
-import { AlertTriangle, ArrowRight, Globe, Search } from "lucide-react";
+import { AlertTriangle, ArrowRight, KeyRound, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
@@ -105,7 +105,7 @@ export default function HomePage() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-400 bg-clip-text text-transparent">
-                OSSIntel
+                OSS<span className="text-green-700">Intel</span>
               </h1>
               <p className="text-xs text-slate-400 font-medium">
                 Open Source Intelligence Platform
@@ -163,18 +163,29 @@ export default function HomePage() {
             </div>
 
             <div className="flex gap-2 justify-center">
-              <button
-                type="button"
-                onClick={() => setShowSettings(!showSettings)}
-                className={`p-3 border rounded-xl transition-all ${
-                  showSettings || token
-                    ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
-                    : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
-                }`}
-                title="GitHub PAT Settings"
-              >
-                <Globe className="h-5 w-5" />
-              </button>
+              <div className="group relative flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(!showSettings)}
+                  className={`p-3 border rounded-xl transition-all ${
+                    showSettings || token
+                      ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
+                      : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
+                  }`}
+                  aria-label="GitHub Personal Access Token Settings"
+                >
+                  <KeyRound className="h-5 w-5" />
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-900 border border-slate-800 text-slate-350 text-[10px] rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-50 text-center font-medium leading-normal">
+                  <p className="font-bold text-slate-100 mb-0.5">
+                    GitHub Access Token (PAT)
+                  </p>
+                  <p className="text-slate-450">
+                    Click to configure a Personal Access Token to avoid GitHub
+                    API rate limits.
+                  </p>
+                </div>
+              </div>
               <button
                 type="submit"
                 className="px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all flex items-center justify-center gap-2 whitespace-nowrap"

@@ -16,11 +16,13 @@ interface RepositoryScoreItem {
   };
   stars: number;
   forks: number;
+  isContribution?: boolean;
 }
 
 interface RepositoriesTableProps {
   repositories: RepositoryScoreItem[];
   username?: string;
+  externalContributions?: RepositoryScoreItem[];
 }
 
 type SortField = "repoName" | "stars" | "forks" | "overall" | "risk";
@@ -29,6 +31,7 @@ type SortOrder = "asc" | "desc";
 export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
   repositories,
   username,
+  externalContributions,
 }) => {
   const router = useRouter();
 
@@ -93,8 +96,11 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
         tabs.add(owner);
       }
     }
+    if (externalContributions && externalContributions.length > 0) {
+      tabs.add("contributions");
+    }
     return Array.from(tabs);
-  }, [repositories, finalUserLogin]);
+  }, [repositories, finalUserLogin, externalContributions]);
 
   // Set initial active tab
   useEffect(() => {
@@ -110,7 +116,9 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
     // 1. Group by Tab if tabbed mode is enabled
     if (viewMode === "tabs" && groupedTabs.length > 0) {
       const currentTab = activeTab || groupedTabs[0];
-      if (currentTab === "personal") {
+      if (currentTab === "contributions") {
+        result = [...(externalContributions || [])];
+      } else if (currentTab === "personal") {
         result = result.filter(
           (r) => r.fullName.split("/")[0].toLowerCase() === finalUserLogin,
         );
@@ -177,6 +185,7 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
     return result;
   }, [
     repositories,
+    externalContributions,
     viewMode,
     activeTab,
     groupedTabs,
@@ -256,7 +265,11 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
                   : "bg-slate-950/40 border-slate-800/80 text-slate-400 hover:text-slate-200"
               }`}
             >
-              {tab === "personal" ? `Personal (@${finalUserLogin})` : `@${tab}`}
+              {tab === "personal"
+                ? `Personal (@${finalUserLogin})`
+                : tab === "contributions"
+                  ? "Contributions"
+                  : `@${tab}`}
             </button>
           ))}
         </div>

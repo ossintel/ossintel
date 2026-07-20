@@ -1,4 +1,5 @@
 import type {
+  NormalizedContribution,
   NormalizedContributor,
   NormalizedLanguage,
   NormalizedRelease,
@@ -30,6 +31,7 @@ export interface NpmPackageStats {
 export interface IdentityScoringInputs {
   repositories: NormalizedRepository[];
   npmPackages?: NpmPackageStats[];
+  externalContributions?: NormalizedContribution[];
 }
 
 export type IdentityScores = RepositoryScores;

@@ -3,6 +3,7 @@ import type {
   GitHubFetchOptions,
   InputDetectionResult,
   LinkedIdentitySuggestions,
+  NormalizedContribution,
   NormalizedContributor,
   NormalizedDeveloper,
   NormalizedLanguage,
@@ -13,6 +14,7 @@ import type {
   RawGitHubOrganization,
   RawGitHubRelease,
   RawGitHubRepository,
+  RawGitHubSearchIssue,
   RawGitHubUser,
 } from "./types";
 
@@ -386,4 +388,114 @@ export function suggestLinkedIdentities(
   };
 
   return suggestions;
+}
+
+export async function fetchExternalContributions(
+  username: string,
+  limit = 10,
+  options?: GitHubFetchOptions,
+): Promise<NormalizedContribution[]> {
+  try {
+    const searchRes = await githubFetch<{ items: RawGitHubSearchIssue[] }>(
+      `/search/issues?q=type:pr+author:${username}+-user:${username}+is:merged&per_page=100`,
+      options,
+    );
+
+    const items = searchRes.items || [];
+    const repoStarsMap = new Map<string, number>();
+    const uniqueRepos = Array.from(
+      new Set(
+        items.map((item) => {
+          const parts = item.repository_url.split("/");
+          return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
+        }),
+      ),
+    ).slice(0, limit);
+
+    for (const repoFullName of uniqueRepos) {
+      try {
+        const rawRepo = await githubFetch<RawGitHubRepository>(
+          `/repos/${repoFullName}`,
+          options,
+        );
+        repoStarsMap.set(repoFullName, rawRepo.stargazers_count ?? 0);
+      } catch (err) {
+        console.error(`Failed to fetch repo metadata for ${repoFullName}`, err);
+        repoStarsMap.set(repoFullName, 0);
+      }
+    }
+
+    const contributions: NormalizedContribution[] = [];
+
+    for (const item of items) {
+      const parts = item.repository_url.split("/");
+      const repoFullName = `${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
+
+      if (!repoStarsMap.has(repoFullName)) {
+        continue;
+      }
+
+      const title = item.title.toLowerCase();
+      const labels = (item.labels || []).map((l) => l.name.toLowerCase());
+
+      let type: "code" | "docs" | "test" | "chore" = "code";
+
+      const isDocs =
+        title.includes("typo") ||
+        title.includes("readme") ||
+        title.includes("docs:") ||
+        title.includes("documentation") ||
+        title.includes("spelling") ||
+        labels.some(
+          (l) =>
+            l.includes("doc") || l.includes("typo") || l.includes("readme"),
+        );
+
+      const isTest =
+        title.includes("test:") ||
+        title.includes("tests:") ||
+        title.includes("spec:") ||
+        title.includes("unit test") ||
+        labels.some(
+          (l) => l.includes("test") || l.includes("spec") || l.includes("qa"),
+        );
+
+      const isChore =
+        title.includes("chore:") ||
+        title.includes("bump ") ||
+        title.includes("release ") ||
+        labels.some(
+          (l) =>
+            l.includes("chore") ||
+            l.includes("dependencies") ||
+            l.includes("ci"),
+        );
+
+      if (isDocs) {
+        type = "docs";
+      } else if (isTest) {
+        type = "test";
+      } else if (isChore) {
+        type = "chore";
+      }
+
+      contributions.push({
+        title: item.title,
+        htmlUrl: item.html_url,
+        repoFullName,
+        number: item.number,
+        state: item.state,
+        createdAt: item.created_at,
+        mergedAt: item.pull_request?.merged_at || item.closed_at,
+        labels: (item.labels || []).map((l) => l.name),
+        type,
+        targetRepoStars: repoStarsMap.get(repoFullName) || 0,
+      });
+    }
+
+    return contributions;
+  } catch (err) {
+    console.error("Failed to fetch external contributions", err);
+    return [];
+  }
 }

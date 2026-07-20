@@ -14,6 +14,7 @@ import { FaKey } from "react-icons/fa";
 import { AINarrator } from "@/components/dashboard/ai-narrator";
 import { DimensionBreakdown } from "@/components/dashboard/dimension-breakdown";
 import { FindingsList } from "@/components/dashboard/findings-list";
+import { OpenSourceImpact } from "@/components/dashboard/open-source-impact";
 import { OrgSelector } from "@/components/dashboard/org-selector";
 import { OverviewCard } from "@/components/dashboard/overview-card";
 import { ProfileCard } from "@/components/dashboard/profile-card";
@@ -42,9 +43,10 @@ export default function UserPage() {
   const [linkedNpm, setLinkedNpm] = useState<string>("");
   const [linkedSO, setLinkedSO] = useState<string>("");
   const [includeUserRepos, setIncludeUserRepos] = useState<boolean>(true);
+  const [contribLimit, setContribLimit] = useState<number>(10);
 
   // 1. Fetch user data (repos, orgs, metadata) using custom hook
-  const userQuery = useGithubUser(username);
+  const userQuery = useGithubUser(username, contribLimit);
 
   // 2. Fetch selected organizations data using custom hook
   const orgsQuery = useGithubOrgs(selectedOrgs);
@@ -132,6 +134,7 @@ export default function UserPage() {
     linkedSO,
     userLogin: userQuery.data?.metadata?.login || "",
     userName: userQuery.data?.metadata?.name || "",
+    externalContributions: userQuery.data?.externalContributions || [],
   });
 
   const fullAnalysisData = useMemo(() => {
@@ -457,6 +460,14 @@ export default function UserPage() {
                 />
 
                 <AINarrator promptContext={clientIntel.promptContext} />
+                {userQuery.data.externalContributions && (
+                  <OpenSourceImpact
+                    contributions={userQuery.data.externalContributions}
+                    limit={contribLimit}
+                    onLimitChange={setContribLimit}
+                    onRefresh={handleRefresh}
+                  />
+                )}
                 <FindingsList findings={clientIntel.findings} />
                 <RecommendationsGrid
                   recommendations={clientIntel.recommendations}
@@ -465,6 +476,7 @@ export default function UserPage() {
                   <RepositoriesTable
                     repositories={clientIntel.repositories}
                     username={userQuery.data.metadata.login}
+                    externalContributions={clientIntel.externalContributions}
                   />
                 )}
               </div>

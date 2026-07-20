@@ -2,6 +2,7 @@ import {
   detectInput,
   fetchContributors,
   fetchDeveloper,
+  fetchExternalContributions,
   fetchLanguages,
   fetchOrganization,
   fetchOrganizations,
@@ -9,6 +10,7 @@ import {
   fetchRepositories,
   fetchRepository,
   GitHubRateLimitError,
+  type NormalizedContribution,
   type NormalizedContributor,
   type NormalizedLanguage,
   type NormalizedRelease,
@@ -43,9 +45,10 @@ async function getOwnerType(
 
 export async function POST(request: Request) {
   try {
-    const { query, token, type, owner, repo } = await request.json();
+    const { query, token, type, owner, repo, limit } = await request.json();
 
     const options = { token };
+    const contribLimit = limit ? Number(limit) : 10;
 
     // 1. GitHub Repository Direct Request
     if (type === "repo") {
@@ -152,6 +155,16 @@ export async function POST(request: Request) {
           perPage: 100,
         });
         const organizations = await fetchOrganizations(login, options);
+        let externalContributions: NormalizedContribution[] = [];
+        try {
+          externalContributions = await fetchExternalContributions(
+            login,
+            contribLimit,
+            options,
+          );
+        } catch (e) {
+          console.error("Failed to fetch external contributions", e);
+        }
 
         // Fetch user profile README
         let readme = "";
@@ -199,6 +212,7 @@ export async function POST(request: Request) {
             email: developer.email,
           },
           repositories: personalRepos,
+          externalContributions,
         });
       }
     }
@@ -278,6 +292,16 @@ export async function POST(request: Request) {
           perPage: 100,
         });
         const organizations = await fetchOrganizations(login, options);
+        let externalContributions: NormalizedContribution[] = [];
+        try {
+          externalContributions = await fetchExternalContributions(
+            login,
+            contribLimit,
+            options,
+          );
+        } catch (e) {
+          console.error("Failed to fetch external contributions", e);
+        }
         const suggestions = suggestLinkedIdentities(developer, personalRepos);
         return NextResponse.json({
           type: "user",
@@ -301,6 +325,7 @@ export async function POST(request: Request) {
             email: developer.email,
           },
           repositories: personalRepos,
+          externalContributions,
         });
       }
     }
