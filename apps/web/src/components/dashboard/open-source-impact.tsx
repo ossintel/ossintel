@@ -6,6 +6,7 @@ import {
   BookOpen,
   Calendar,
   CheckCircle,
+  ChevronDown,
   GitPullRequest,
   KeyRound,
   ShieldCheck,
@@ -31,6 +32,10 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
 }) => {
   const [patInput, setPatInput] = useState("");
   const [hasToken, setHasToken] = useState(false);
+  const [ecosystemExpanded, setEcosystemExpanded] = useState<boolean>(true);
+  const [expandedYears, setExpandedYears] = useState<Record<number, boolean>>(
+    {},
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -291,38 +296,53 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
 
           {/* Visual Distribution Chart */}
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Ecosystem Distribution
-            </h3>
-            <div className="space-y-3">
-              {repoDistribution.slice(0, 5).map((dist) => {
-                const percentage = Math.round((dist.count / maxRepoPRs) * 100);
-                return (
-                  <div key={dist.repo} className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-slate-200 flex items-center gap-1.5">
-                        {dist.repo}
-                        <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
-                          <Star className="h-3 w-3 fill-amber-500/20 text-amber-500" />
-                          {dist.stars >= 1000
-                            ? `${(dist.stars / 1000).toFixed(0)}k`
-                            : dist.stars}
+            <button
+              type="button"
+              onClick={() => setEcosystemExpanded(!ecosystemExpanded)}
+              className="w-full flex items-center justify-between text-left focus:outline-none group"
+            >
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-slate-300 transition-colors">
+                Ecosystem Distribution
+              </h3>
+              <ChevronDown
+                className={`h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-transform duration-200 ${
+                  ecosystemExpanded ? "transform rotate-180" : ""
+                }`}
+              />
+            </button>
+            {ecosystemExpanded && (
+              <div className="space-y-3 animate-fade-in">
+                {repoDistribution.slice(0, 5).map((dist) => {
+                  const percentage = Math.round(
+                    (dist.count / maxRepoPRs) * 100,
+                  );
+                  return (
+                    <div key={dist.repo} className="space-y-1">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-semibold text-slate-200 flex items-center gap-1.5">
+                          {dist.repo}
+                          <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                            <Star className="h-3 w-3 fill-amber-500/20 text-amber-500" />
+                            {dist.stars >= 1000
+                              ? `${(dist.stars / 1000).toFixed(0)}k`
+                              : dist.stars}
+                          </span>
                         </span>
-                      </span>
-                      <span className="font-bold text-indigo-400">
-                        {dist.count} PR{dist.count > 1 ? "s" : ""}
-                      </span>
+                        <span className="font-bold text-indigo-400">
+                          {dist.count} PR{dist.count > 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="h-2 bg-slate-950 border border-slate-800/80 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-indigo-600 to-violet-500 rounded-full"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 bg-slate-950 border border-slate-800/80 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-indigo-600 to-violet-500 rounded-full"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Badges Panel */}
@@ -365,42 +385,68 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
               Contribution Timeline
             </h3>
             <div className="relative border-l border-slate-800 pl-4 ml-2 space-y-6">
-              {sortedYears.map((year) => (
-                <div key={year} className="relative space-y-3">
-                  {/* Bullet */}
-                  <div className="absolute -left-[21px] top-1 p-1 bg-slate-950 border border-slate-800 rounded-full shrink-0">
-                    <Calendar className="h-3 w-3 text-indigo-400" />
+              {sortedYears.map((year) => {
+                const isYearExpanded =
+                  expandedYears[year] ?? year === sortedYears[0];
+                const toggleYear = () => {
+                  setExpandedYears((prev) => ({
+                    ...prev,
+                    [year]: !isYearExpanded,
+                  }));
+                };
+
+                return (
+                  <div key={year} className="relative space-y-3">
+                    {/* Bullet */}
+                    <div className="absolute -left-[21px] top-1.5 p-1 bg-slate-950 border border-slate-800 rounded-full shrink-0 z-10">
+                      <Calendar className="h-3 w-3 text-indigo-400" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleYear}
+                      className="w-full flex items-center justify-between text-left focus:outline-none group/year"
+                    >
+                      <h4 className="text-sm font-bold text-slate-200 group-hover/year:text-indigo-400 transition-colors">
+                        {year}
+                      </h4>
+                      <ChevronDown
+                        className={`h-4 w-4 text-slate-500 group-hover/year:text-indigo-400 transition-transform duration-200 ${
+                          isYearExpanded ? "transform rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                    {isYearExpanded && (
+                      <ul className="space-y-2 animate-fade-in">
+                        {timelineByYear[year].map((c) => (
+                          <li
+                            key={`${c.repoFullName}-${c.number}`}
+                            className="p-3.5 bg-slate-950/40 border border-slate-800/80 rounded-2xl hover:border-slate-700 transition-colors"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 uppercase tracking-wider mr-2">
+                                  {c.type}
+                                </span>
+                                <a
+                                  href={c.htmlUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs font-semibold text-slate-200 hover:text-indigo-400 underline transition-colors"
+                                >
+                                  {c.title}
+                                </a>
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-400 shrink-0">
+                                {c.repoFullName}
+                              </span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  <h4 className="text-sm font-bold text-slate-200">{year}</h4>
-                  <ul className="space-y-2">
-                    {timelineByYear[year].map((c) => (
-                      <li
-                        key={`${c.repoFullName}-${c.number}`}
-                        className="p-3.5 bg-slate-950/40 border border-slate-800/80 rounded-2xl hover:border-slate-700 transition-colors"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 uppercase tracking-wider mr-2">
-                              {c.type}
-                            </span>
-                            <a
-                              href={c.htmlUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs font-semibold text-slate-200 hover:text-indigo-400 underline transition-colors"
-                            >
-                              {c.title}
-                            </a>
-                          </div>
-                          <span className="text-[10px] font-bold text-slate-400 shrink-0">
-                            {c.repoFullName}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </>
