@@ -14,7 +14,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface OpenSourceImpactProps {
   contributions: NormalizedContribution[];
@@ -37,6 +37,9 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
   const [expandedYears, setExpandedYears] = useState<Record<number, boolean>>(
     {},
   );
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"repo" | "count" | "stars">("count");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -70,20 +73,41 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
   const testCount = contributions.filter((c) => c.type === "test").length;
 
   // 2. Repo distribution calculations
-  const repoDistribution = uniqueRepos
-    .map((repo) => {
-      const prs = contributions.filter((c) => c.repoFullName === repo);
-      const stars = prs[0]?.targetRepoStars || 0;
-      return {
-        repo,
-        name: repo.split("/")[1] || repo,
-        count: prs.length,
-        stars,
-      };
-    })
-    .sort((a, b) => b.count - a.count || b.stars - a.stars);
+  const repoDistribution = useMemo(() => {
+    return uniqueRepos
+      .map((repo) => {
+        const prs = contributions.filter((c) => c.repoFullName === repo);
+        const stars = prs[0]?.targetRepoStars || 0;
+        return {
+          repo,
+          name: repo.split("/")[1] || repo,
+          count: prs.length,
+          stars,
+        };
+      })
+      .filter((item) =>
+        item.repo.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+      .sort((a, b) => {
+        let cmp = 0;
+        if (sortBy === "repo") {
+          cmp = a.repo.localeCompare(b.repo);
+        } else if (sortBy === "count") {
+          cmp = a.count - b.count;
+        } else if (sortBy === "stars") {
+          cmp = a.stars - b.stars;
+        }
+        return sortOrder === "asc" ? cmp : -cmp;
+      });
+  }, [uniqueRepos, contributions, searchQuery, sortBy, sortOrder]);
 
-  const maxRepoPRs = repoDistribution[0]?.count || 1;
+  const maxRepoPRs = useMemo(() => {
+    const rawDist = uniqueRepos.map((repo) => {
+      const prs = contributions.filter((c) => c.repoFullName === repo);
+      return prs.length;
+    });
+    return rawDist.length > 0 ? Math.max(...rawDist) : 1;
+  }, [uniqueRepos, contributions]);
 
   // 3. Timeline grouping by year
   const timelineByYear = contributions.reduce(
@@ -346,36 +370,147 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
               />
             </button>
             {ecosystemExpanded && (
-              <div className="space-y-3 animate-fade-in">
-                {repoDistribution.slice(0, 5).map((dist) => {
-                  const percentage = Math.round(
-                    (dist.count / maxRepoPRs) * 100,
-                  );
-                  return (
-                    <div key={dist.repo} className="space-y-1">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-semibold text-slate-200 flex items-center gap-1.5">
-                          {dist.repo}
-                          <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
-                            <Star className="h-3 w-3 fill-amber-500/20 text-amber-500" />
-                            {dist.stars >= 1000
-                              ? `${(dist.stars / 1000).toFixed(0)}k`
-                              : dist.stars}
-                          </span>
-                        </span>
-                        <span className="font-bold text-indigo-400">
-                          {dist.count} PR{dist.count > 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-slate-950 border border-slate-800/80 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-indigo-600 to-violet-500 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="space-y-4 animate-fade-in">
+                {/* Search query input */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search ecosystem repositories..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-indigo-500/40"
+                  />
+                </div>
+
+                {/* Table Container */}
+                <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-950/40">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px] bg-slate-950/80">
+                        <th className="p-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (sortBy === "repo") {
+                                setSortOrder(
+                                  sortOrder === "asc" ? "desc" : "asc",
+                                );
+                              } else {
+                                setSortBy("repo");
+                                setSortOrder("asc");
+                              }
+                            }}
+                            className="hover:text-slate-200 transition-colors flex items-center gap-1 focus:outline-none"
+                          >
+                            Repository{" "}
+                            {sortBy === "repo" &&
+                              (sortOrder === "asc" ? "▲" : "▼")}
+                          </button>
+                        </th>
+                        <th className="p-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (sortBy === "count") {
+                                setSortOrder(
+                                  sortOrder === "asc" ? "desc" : "asc",
+                                );
+                              } else {
+                                setSortBy("count");
+                                setSortOrder("desc");
+                              }
+                            }}
+                            className="hover:text-slate-200 transition-colors flex items-center gap-1 focus:outline-none"
+                          >
+                            Contributions{" "}
+                            {sortBy === "count" &&
+                              (sortOrder === "asc" ? "▲" : "▼")}
+                          </button>
+                        </th>
+                        <th className="p-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (sortBy === "stars") {
+                                setSortOrder(
+                                  sortOrder === "asc" ? "desc" : "asc",
+                                );
+                              } else {
+                                setSortBy("stars");
+                                setSortOrder("desc");
+                              }
+                            }}
+                            className="hover:text-slate-200 transition-colors flex items-center gap-1 focus:outline-none"
+                          >
+                            Stars{" "}
+                            {sortBy === "stars" &&
+                              (sortOrder === "asc" ? "▲" : "▼")}
+                          </button>
+                        </th>
+                        <th className="p-3 text-right">Link</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {repoDistribution.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="p-4 text-center text-slate-500 font-medium"
+                          >
+                            No matching repositories found.
+                          </td>
+                        </tr>
+                      ) : (
+                        repoDistribution.map((dist) => {
+                          const percentage = Math.round(
+                            (dist.count / maxRepoPRs) * 100,
+                          );
+                          return (
+                            <tr
+                              key={dist.repo}
+                              className="border-b border-slate-800/40 hover:bg-slate-900/20 transition-colors"
+                            >
+                              <td className="p-3 font-semibold text-slate-200">
+                                {dist.repo}
+                              </td>
+                              <td className="p-3 font-bold text-indigo-400">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-8 shrink-0">
+                                    {dist.count} PRs
+                                  </span>
+                                  <div className="w-24 bg-slate-950 h-1.5 rounded-full overflow-hidden shrink-0 border border-slate-800/40">
+                                    <div
+                                      className="h-full bg-gradient-to-r from-indigo-600 to-violet-500 rounded-full"
+                                      style={{ width: `${percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-3 text-slate-300">
+                                <div className="flex items-center gap-1 text-[11px]">
+                                  <Star className="h-3.5 w-3.5 fill-amber-500/20 text-amber-500 shrink-0" />
+                                  {dist.stars >= 1000
+                                    ? `${(dist.stars / 1000).toFixed(1)}k`
+                                    : dist.stars}
+                                </div>
+                              </td>
+                              <td className="p-3 text-right">
+                                <a
+                                  href={`https://github.com/${dist.repo}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2.5 py-1 bg-slate-900 border border-slate-800 hover:border-slate-700 text-[10px] font-bold rounded-lg text-slate-400 hover:text-slate-200 transition-all inline-block"
+                                >
+                                  GitHub
+                                </a>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
