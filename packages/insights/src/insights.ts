@@ -1,5 +1,9 @@
 import type { NormalizedRepository } from "@ossintel/github-normalizer";
-import type { RepositoryScores, ScoringInputs } from "@ossintel/scoring";
+import type {
+  IdentityScores,
+  RepositoryScores,
+  ScoringInputs,
+} from "@ossintel/scoring";
 import type {
   Finding,
   IdentityInsights,
@@ -244,7 +248,7 @@ export const generateInsights = (
 
 export const generateIdentityInsights = (
   repositories: NormalizedRepository[],
-  scores: RepositoryScores,
+  scores: IdentityScores,
   identityMetadata: IdentityMetadata,
 ): IdentityInsights => {
   const findings: Finding[] = [];
@@ -292,7 +296,8 @@ export const generateIdentityInsights = (
     });
   }
 
-  if (scores.risk > 60) {
+  const riskScore = 100 - scores.maintainer;
+  if (riskScore > 60) {
     findings.push({
       id: "identity_risk_high",
       type: "warning",
@@ -300,7 +305,7 @@ export const generateIdentityInsights = (
       title: "High Portfolio Maintenance Risk",
       description:
         "Average risk across active repositories is elevated, suggesting potential maintenance single points of failure.",
-      score: scores.risk,
+      score: riskScore,
     });
     recommendations.push({
       id: "identity_risk_mitigate",
@@ -312,15 +317,15 @@ export const generateIdentityInsights = (
     });
   }
 
-  if (scores.health < 40) {
+  if (scores.maintainer < 40) {
     findings.push({
       id: "identity_health_low",
       type: "warning",
       category: "health",
       title: "Neglected Portfolio Issue Backlog",
       description:
-        "Active repositories exhibit a significant cumulative open issue backlog relative to ecosystem adoption.",
-      score: scores.health,
+        "Active repositories exhibit a significant open issue backlog relative to ecosystem adoption.",
+      score: scores.maintainer,
     });
     recommendations.push({
       id: "identity_health_triage",
@@ -332,7 +337,7 @@ export const generateIdentityInsights = (
     });
   }
 
-  if (scores.impact > 70) {
+  if (scores.influence > 70) {
     findings.push({
       id: "identity_impact_high",
       type: "highlight",
@@ -340,7 +345,7 @@ export const generateIdentityInsights = (
       title: "Major Ecosystem Influence",
       description:
         "The maintainer portfolio has high stars, forks, and adoption, indicating critical ecosystem significance.",
-      score: scores.impact,
+      score: scores.influence,
     });
   }
 
@@ -349,11 +354,10 @@ export const generateIdentityInsights = (
   const scoresText = [
     "### Calculated Scores",
     `- Overall Score: ${scores.overall}/100`,
-    `- Health Score: ${scores.health}/100`,
-    `- Impact Score: ${scores.impact}/100`,
-    `- Activity Score: ${scores.activity}/100`,
-    `- Community Score: ${scores.community}/100`,
-    `- Risk Score: ${scores.risk}/100`,
+    `- Maintainer Score: ${scores.maintainer}/100`,
+    `- Contributor Score: ${scores.contributor}/100`,
+    `- Organization Leadership Score: ${scores.organization}/100`,
+    `- Community Influence Score: ${scores.influence}/100`,
   ].join("\n");
 
   const metricsText = [

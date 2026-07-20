@@ -1,4 +1,8 @@
-import type { RepositoryScores, ScoringInputs } from "@ossintel/scoring";
+import type {
+  IdentityScores,
+  RepositoryScores,
+  ScoringInputs,
+} from "@ossintel/scoring";
 import { describe, expect, test } from "vitest";
 import { generateIdentityInsights, generateInsights } from "./insights";
 
@@ -119,13 +123,26 @@ describe("insights engine", () => {
       mockRepository({ isArchived: true }),
       mockRepository({ isArchived: false }),
     ];
-    const scores: RepositoryScores = {
+    const scores: IdentityScores = {
       overall: 80,
-      health: 85,
-      impact: 90,
-      activity: 70,
-      community: 75,
-      risk: 10,
+      maintainer: 85,
+      contributor: 70,
+      organization: 75,
+      influence: 90,
+      confidence: "High",
+      evidence: {
+        maintainer: [],
+        contributor: [],
+        influence: [],
+        organization: [],
+      },
+      factors: {
+        maintainer: [],
+        contributor: [],
+        influence: [],
+        organization: [],
+      },
+      badges: [],
     };
     const metadata = {
       type: "user" as const,
