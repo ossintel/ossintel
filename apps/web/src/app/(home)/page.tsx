@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   ArrowRight,
   Binary,
-  BookOpen,
   KeyRound,
   Search,
   Sparkles,
@@ -15,7 +14,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { GithubIcon } from "@/components/icons";
 import { savePatCookie } from "@/lib/api-client";
 
 export default function HomePage() {
@@ -121,46 +119,6 @@ export default function HomePage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500/30 flex flex-col justify-between">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] pointer-events-none opacity-50" />
-
-      {/* Header */}
-      <header className="relative border-b border-slate-900 bg-slate-950/20 backdrop-blur-sm z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-1 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg shadow-slate-900/10">
-              {/* biome-ignore lint/performance/noImgElement: static logo asset */}
-              <img
-                src="/ossintel.png"
-                alt="OSSIntel Logo"
-                className="h-9 w-9 object-contain"
-              />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-400 bg-clip-text text-transparent">
-                OSS<span className="text-green-700">Intel</span>
-              </h1>
-              <p className="text-xs text-slate-400 font-medium">
-                Open Source Intelligence Platform
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link
-              href="/docs"
-              className="text-sm font-medium text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
-            >
-              <BookOpen className="h-4 w-4" /> Docs
-            </Link>
-            <a
-              href="https://github.com/mayank1513/ossintel"
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm font-medium text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
-            >
-              <GithubIcon className="h-4 w-4" /> GitHub
-            </a>
-          </div>
-        </div>
-      </header>
 
       {/* Main Search Panel */}
       <main className="relative max-w-7xl mx-auto px-6 py-20 z-10 flex-1 flex flex-col justify-center items-center gap-10">
@@ -518,11 +476,18 @@ export default function HomePage() {
               </h5>
               <p className="text-xs text-slate-400 leading-normal">
                 Includes{" "}
-                <code className="text-indigo-400 font-mono">@ossintel/npm</code>{" "}
-                (NPM registry statistics fetcher) and{" "}
-                <code className="text-indigo-400 font-mono">
-                  @ossintel/stackoverflow
-                </code>{" "}
+                <Link href="/docs/npm">
+                  <code className="text-indigo-400 font-mono">
+                    @ossintel/npm
+                  </code>{" "}
+                  (NPM registry statistics fetcher)
+                </Link>{" "}
+                and{" "}
+                <Link href="/docs/stackoverflow">
+                  <code className="text-indigo-400 font-mono">
+                    @ossintel/stackoverflow
+                  </code>{" "}
+                </Link>
                 (StackOverflow profile statistics fetcher).
               </p>
             </div>

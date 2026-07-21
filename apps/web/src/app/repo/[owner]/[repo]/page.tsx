@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ExternalLink, Info, RefreshCw, User } from "lucide-react";
+import { ExternalLink, Info, RefreshCw, User } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaGithub } from "react-icons/fa";
@@ -100,30 +100,6 @@ export default function RepoPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500/30">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none opacity-50" />
-
-      {/* Header */}
-      <header className="relative border-b border-slate-800 bg-slate-900/80 backdrop-blur-md z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to Search
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="p-0.5 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-              {/* biome-ignore lint/performance/noImgElement: static logo asset */}
-              <img
-                src="/ossintel.png"
-                alt="OSSIntel Logo"
-                className="h-6 w-6 object-contain"
-              />
-            </div>
-            <span className="text-sm font-bold">OSSIntel</span>
-          </div>
-        </div>
-      </header>
 
       {/* Main Content */}
       <main className="relative max-w-7xl mx-auto px-6 py-12 z-10 flex flex-col gap-10">

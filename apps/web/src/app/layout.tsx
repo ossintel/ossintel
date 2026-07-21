@@ -46,6 +46,7 @@ export const metadata: Metadata = {
   },
 };
 
+import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
 
 export default function Layout({ children }: LayoutProps<"/">) {
@@ -53,7 +54,10 @@ export default function Layout({ children }: LayoutProps<"/">) {
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen dark">
         <Providers>
-          <RootProvider>{children}</RootProvider>
+          <RootProvider>
+            <Header />
+            {children}
+          </RootProvider>
         </Providers>
       </body>
     </html>
