@@ -1,172 +1,63 @@
+@CONTEXT.md
+@CODING_STANDARDS.md
+
 # OSSIntel Development Guidelines
 
-Before making any changes, understand the project architecture and conventions.
-
 ## Documentation First
-
-Read the relevant project documentation before implementing anything.
-
-Priority order:
-
+Read project documentation before implementing anything. Priority:
 1. Relevant package `README.md`
 2. Root `README.md`
 3. `turbo-forge.md`
-4. Any relevant documents under `docs/`, `packages/**/docs/*`
-5. Relevant files under `.agent/skills/`
-
-Only read documentation relevant to the current task.
-
----
+4. Relevant docs under `docs/`, `packages/**/docs/*`
+5. Relevant files under `.agents/skills/`
 
 ## README Rules
-
-The README files are treated as architectural contracts.
-
-- Do **not** modify the auto-generated badges section.
-- Do **not** modify the installation section.
-- These sections intentionally use HTML (`<p>`, `<img>`) instead of Markdown for compatibility with the documentation pipeline.
-- Preserve their structure exactly.
-
-Only update the remaining sections when explicitly required.
-
----
+- Do **not** modify auto-generated badges or installation sections (HTML used for docs pipeline).
+- Update remaining sections only when required.
 
 ## Turbo Forge
-
-Follow the project conventions documented in `turbo-forge.md`.
-
-Do not introduce new project structure, tooling, or workflows unless explicitly requested.
-
----
+Follow conventions in `turbo-forge.md`. Do not introduce new structure/tooling unless requested.
 
 ## Documentation Automation
-
-This repository contains automated documentation generation and rendering.
-
-Do not break or modify these flows.
-
-Avoid changes that affect:
-
-- fumadocs documentation rendering
-- Typedoc output
-- Fumadocs compatibility
-- documentation automation
-
-If documentation-related changes are required, ensure existing automation continues to function.
-
----
+Do not break documentation generation, Typedoc output, or Fumadocs rendering.
 
 ## DRY
-
-Before introducing new code:
-
-- Search for existing implementations.
-- Reuse utilities where appropriate.
-- Prefer extending existing abstractions over creating new ones.
-
-Follow the guidance in:
-
-`.agent/skills/dry-refactoring`
-
-Avoid duplicate business logic, duplicate utilities, and duplicate types.
+Search for existing implementations. Reuse utilities. Prefer extending existing abstractions over creating new ones. Follow `.agents/skills/dry-refactoring`. Avoid duplicate logic, utilities, and types.
 
 ---
-
 ## Package Responsibilities
-
 Keep package boundaries strict.
 
 ### github-normalizer
-
-Responsible only for fetching and normalizing data.
-
-Must not:
-
-- calculate scores
-- generate insights
-- contain UI logic
-
----
+Fetching and normalizing data. Must not calculate scores, generate insights, or contain UI logic.
 
 ### scoring
-
-Responsible only for deterministic calculations.
-
-Must not:
-
-- call external APIs
-- invoke AI
-- render UI
-
-The same inputs must always produce the same outputs.
-
----
+Deterministic calculations. Must not call external APIs, invoke AI, or render UI. The same inputs must always produce the same outputs.
 
 ### insights
-
-Responsible for interpreting metrics and scores.
-
-May:
-
-- generate findings
-- generate recommendations
-- prepare AI prompt context
-
-Must not:
-
-- calculate scores
-- fetch external data
-
----
+Interpreting metrics/scores. May generate findings, recommendations, or AI context. Must not calculate scores or fetch external data.
 
 ### web
-
-Presentation layer only.
-
-Business logic belongs inside reusable packages whenever practical.
+Presentation layer only. Business logic belongs in reusable packages.
 
 ---
-
 ## Code Quality
-
-- Strict TypeScript.
-- Keep modules focused.
-- Prefer pure arrow functions.
-- Avoid unnecessary abstractions.
-- Add or update tests when business logic changes.
-- Run `pnpm.cmd lint:fix` to lint
-- typecheck: For typechecking the web app, run `pnpm.cmd type:check` inside apps/web
-- For packages typecheck run `pnpm.cmd typecheck` in root
-
----
+Refer to `@CODING_STANDARDS.md`.
+- Lint: `pnpm.cmd lint:fix`
+- Typecheck web app: `pnpm.cmd types:check` inside `apps/web`
+- Typecheck packages: `pnpm.cmd typecheck` in root
 
 ## Package Manager
+Always use `pnpm.cmd`. Never `npm`, `npx`, `yarn`, or bare `pnpm`.
 
-Always use:
+## Token-Efficient Output
+- Pipe output through `| Select-Object -Last N` on PowerShell.
+- Use `git log -n 10 --oneline`, `git diff --stat`, `git diff -- <file>`.
+- Cap search results: `rg -m 5`, `grep -m 5`.
+- Prefer `--filter=<package>` to scope turbo commands.
 
-```bash
-pnpm.cmd
-```
-
-Never use:
-
-- npm
-- npx
-- yarn
-- pnpm (without `.cmd`)
-
-Examples:
-
-```bash
-pnpm.cmd install
-pnpm.cmd test
-pnpm.cmd lint
-pnpm.cmd build
-pnpm.cmd exec ...
-```
-
----
+## Future Architecture
+Planned: new data-source packages (`@ossintel/npm`, `@ossintel/stackoverflow`), potential rename of `github-normalizer` to `github`, and a shared types/utils package.
 
 ## Goal
-
-Build reusable, deterministic, well-tested libraries that power the OSSIntel platform while preserving the existing project architecture and automation, and the OSSIntel platform itself under apps/web.
+Build reusable, deterministic, well-tested libraries that power OSSIntel while preserving existing project architecture.
