@@ -1,36 +1,61 @@
 "use client";
 
+import type {
+  NormalizedLanguage,
+  NormalizedRepository,
+} from "@ossintel/github-normalizer";
+import type {
+  Finding,
+  PromptContext,
+  Recommendation,
+} from "@ossintel/insights";
+import type { RepositoryScores } from "@ossintel/scoring";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { deleteCacheItem, getCacheItem, setCacheItem } from "@/lib/cache";
+import { clearCacheItem, fetchWithCache } from "@/lib/api-client";
+
+export interface OrgResponse {
+  type: "org";
+  metadata: {
+    login: string;
+    name: string | null;
+    avatarUrl: string;
+    htmlUrl: string;
+    location: string | null;
+    email: string | null;
+    blog: string | null;
+    publicRepos: number;
+    followers: number;
+    description: string | null;
+  };
+  repositories: NormalizedRepository[];
+}
+
+export interface RepoResponse {
+  type: "repo";
+  metadata: NormalizedRepository;
+  scores: RepositoryScores;
+  findings: Finding[];
+  recommendations: Recommendation[];
+  promptContext: PromptContext;
+  languages: NormalizedLanguage[];
+  contributorsCount: number;
+}
 
 export const useGithubOrg = (orgName: string) => {
   const query = useQuery({
     queryKey: ["org", orgName?.toLowerCase()],
-    queryFn: async () => {
-      const cacheKey = `org:${orgName.toLowerCase()}`;
-      const cached = await getCacheItem<unknown>(cacheKey);
-      if (cached) return cached;
-
-      const token = sessionStorage.getItem("github_token") || "";
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "org", query: orgName, token }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to fetch org");
-      }
-      await setCacheItem(cacheKey, data, 60);
-      return data;
-    },
+    queryFn: () =>
+      fetchWithCache<OrgResponse>(`org:${orgName.toLowerCase()}`, {
+        type: "org",
+        query: orgName,
+      }),
     enabled: !!orgName,
     retry: false,
   });
 
   const refresh = async () => {
     const cacheKey = `org:${orgName.toLowerCase()}`;
-    await deleteCacheItem(cacheKey);
+    await clearCacheItem(cacheKey);
     await query.refetch();
   };
 
@@ -41,24 +66,11 @@ export const useGithubOrgs = (orgNames: string[]) => {
   const queries = useQueries({
     queries: orgNames.map((orgName) => ({
       queryKey: ["org", orgName.toLowerCase()],
-      queryFn: async () => {
-        const cacheKey = `org:${orgName.toLowerCase()}`;
-        const cached = await getCacheItem<unknown>(cacheKey);
-        if (cached) return cached;
-
-        const token = sessionStorage.getItem("github_token") || "";
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "org", query: orgName, token }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || `Failed to fetch org ${orgName}`);
-        }
-        await setCacheItem(cacheKey, data, 60);
-        return data;
-      },
+      queryFn: () =>
+        fetchWithCache<OrgResponse>(`org:${orgName.toLowerCase()}`, {
+          type: "org",
+          query: orgName,
+        }),
       enabled: !!orgName,
       retry: false,
     })),
@@ -67,7 +79,7 @@ export const useGithubOrgs = (orgNames: string[]) => {
   const refreshAll = async () => {
     const refetchPromises = orgNames.map(async (orgName) => {
       const cacheKey = `org:${orgName.toLowerCase()}`;
-      await deleteCacheItem(cacheKey);
+      await clearCacheItem(cacheKey);
     });
     await Promise.all(refetchPromises);
 
@@ -88,31 +100,18 @@ export const useGithubOrgs = (orgNames: string[]) => {
 export const useGithubRepo = (owner: string, repo: string) => {
   const query = useQuery({
     queryKey: ["repo", owner?.toLowerCase(), repo?.toLowerCase()],
-    queryFn: async () => {
-      const cacheKey = `repo:${owner.toLowerCase()}:${repo.toLowerCase()}`;
-      const cached = await getCacheItem<unknown>(cacheKey);
-      if (cached) return cached;
-
-      const token = sessionStorage.getItem("github_token") || "";
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "repo", owner, repo, token }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to fetch repo");
-      }
-      await setCacheItem(cacheKey, data, 60);
-      return data;
-    },
+    queryFn: () =>
+      fetchWithCache<RepoResponse>(
+        `repo:${owner.toLowerCase()}:${repo.toLowerCase()}`,
+        { type: "repo", owner, repo },
+      ),
     enabled: !!owner && !!repo,
     retry: false,
   });
 
   const refresh = async () => {
     const cacheKey = `repo:${owner.toLowerCase()}:${repo.toLowerCase()}`;
-    await deleteCacheItem(cacheKey);
+    await clearCacheItem(cacheKey);
     await query.refetch();
   };
 

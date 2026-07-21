@@ -8,10 +8,10 @@ import type {
 import { generateIdentityInsights } from "@ossintel/insights";
 import {
   calculateIdentityScore,
-  calculateRepositoryScore,
   type NpmPackageStats,
 } from "@ossintel/scoring";
 import { useMemo } from "react";
+import { mapRepositoryScores } from "../lib/audit";
 
 interface DeveloperScoresProps {
   userRepos: NormalizedRepository[];
@@ -65,19 +65,7 @@ export const useDeveloperScores = ({
       linkedIdentities: { npm: linkedNpm, stackoverflow: linkedSO },
     });
 
-    const repoScores = combinedRepos.map((r) => {
-      const s = calculateRepositoryScore({ repository: r });
-      return {
-        repoName: r.name,
-        fullName: r.fullName,
-        scores: {
-          overall: s.overall,
-          risk: s.risk,
-        },
-        stars: r.stargazersCount,
-        forks: r.forksCount,
-      };
-    });
+    const repoScores = mapRepositoryScores(combinedRepos);
 
     const contribScores = (externalContributions || []).map((c) => {
       const starScore = Math.min(100, Math.log10(c.targetRepoStars + 1) * 20);

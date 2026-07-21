@@ -15,16 +15,16 @@ import { Readme } from "./readme";
 
 interface ProfileCardProps {
   avatarUrl: string;
-  name: string;
+  name?: string | null;
   login: string;
-  bio?: string;
-  company?: string;
-  location?: string;
-  email?: string;
+  bio?: string | null;
+  company?: string | null;
+  location?: string | null;
+  email?: string | null;
   htmlUrl: string;
   twitterUsername?: string | null;
-  blog?: string;
-  readme?: string;
+  blog?: string | null;
+  readme?: string | null;
 }
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({

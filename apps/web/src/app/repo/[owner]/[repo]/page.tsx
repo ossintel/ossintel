@@ -1,25 +1,18 @@
 "use client";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ExternalLink,
-  Info,
-  RefreshCw,
-  Sparkles,
-  User,
-} from "lucide-react";
+
+import { ArrowLeft, ExternalLink, Info, RefreshCw, User } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-// React icons
-import { FaGithub, FaKey } from "react-icons/fa";
-import { SiNpm } from "react-icons/si";
+import { FaGithub } from "react-icons/fa";
 import { AINarrator } from "@/components/dashboard/ai-narrator";
 import { DimensionBreakdown } from "@/components/dashboard/dimension-breakdown";
 import { FindingsList } from "@/components/dashboard/findings-list";
 import { LanguagesChart } from "@/components/dashboard/languages-chart";
 import { OverviewCard } from "@/components/dashboard/overview-card";
 import { RecommendationsGrid } from "@/components/dashboard/recommendations-grid";
-import { Input } from "@/components/ui/input";
+import { ErrorAlert } from "@/components/ui/error-alert";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { RateLimitWarning } from "@/components/ui/rate-limit-warning";
 import { useGithubRepo } from "@/hooks/use-github-orgs";
 import { getCacheTimestamp } from "@/lib/cache";
 
@@ -43,8 +36,6 @@ export default function RepoPage() {
   const { data, error, isLoading, refetch, isFetching, refresh } =
     useGithubRepo(owner, repo);
 
-  const [loadingStep, setLoadingStep] = useState(0);
-
   // PAT config state
   const [patInput, setPatInput] = useState("");
   const [showPatConfig, setShowPatConfig] = useState(false);
@@ -55,15 +46,6 @@ export default function RepoPage() {
 
   // Cached state indicator
   const [cachedTime, setCachedTime] = useState<string | null>(null);
-
-  // loading steps animation
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    interval = setInterval(() => {
-      setLoadingStep((prev) => (prev < STEPS.length - 1 ? prev + 1 : prev));
-    }, 900);
-    return () => clearInterval(interval);
-  }, []);
 
   // Cooldown countdown timer
   useEffect(() => {
@@ -152,106 +134,30 @@ export default function RepoPage() {
       {/* Main Content */}
       <main className="relative max-w-7xl mx-auto px-6 py-12 z-10 flex flex-col gap-10">
         {/* Loading overlay */}
-        {(isLoading || isFetching) && (
-          <div className="max-w-xl mx-auto w-full p-8 bg-slate-900/80 border border-slate-800 rounded-3xl shadow-2xl flex flex-col gap-6 items-center text-center">
-            <div className="relative">
-              <div className="h-16 w-16 border-4 border-indigo-500/10 border-t-indigo-500 rounded-full animate-spin" />
-              <Sparkles className="absolute inset-0 m-auto h-6 w-6 text-indigo-400 animate-pulse" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold">
-                Scanning Repository {owner}/{repo}...
-              </h3>
-              <p className="text-sm text-slate-400 max-w-sm h-12 flex items-center justify-center">
-                {STEPS[loadingStep]}
-              </p>
-            </div>
-            <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-              <div
-                className="bg-indigo-500 h-full rounded-full transition-all duration-1000"
-                style={{
-                  width: `${((loadingStep + 1) / STEPS.length) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
+        <LoadingOverlay
+          isLoading={isLoading || isFetching}
+          title={`Scanning Repository ${owner}/${repo}...`}
+          steps={STEPS}
+        />
 
         {/* Custom Rate Limit Error Box */}
         {error?.message.includes("Rate Limit Exceeded") && (
-          <div className="max-w-xl mx-auto w-full p-6 bg-slate-900/90 border border-rose-500/30 rounded-3xl shadow-xl flex flex-col gap-4 text-left">
-            <div className="flex gap-4 items-start text-rose-200">
-              <AlertTriangle className="h-6 w-6 text-rose-500 shrink-0 mt-1" />
-              <div className="space-y-1">
-                <h4 className="font-extrabold text-sm text-rose-400">
-                  GitHub API Rate Limit Exceeded
-                </h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Your search rate limit was reached. It will automatically
-                  reset in{" "}
-                  <strong className="text-indigo-400">
-                    {cooldown || "a moment"}
-                  </strong>
-                  .
-                </p>
-              </div>
-            </div>
-
-            {/* PAT retry interface */}
-            <div className="border-t border-slate-800/80 pt-4 mt-2 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-                  <FaKey className="text-indigo-400 h-3.5 w-3.5" /> Have a
-                  GitHub Access Token?
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowPatConfig(!showPatConfig)}
-                  className="text-xs font-bold text-indigo-400 hover:text-indigo-300 underline"
-                >
-                  {showPatConfig ? "Cancel" : "Add Git PAT"}
-                </button>
-              </div>
-
-              {showPatConfig && (
-                <div className="flex gap-2">
-                  <Input
-                    type="password"
-                    placeholder="ghp_..."
-                    value={patInput}
-                    onChange={(e) => setPatInput(e.target.value)}
-                    className="flex-1 text-xs h-9 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSavePat}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
-                  >
-                    Save & Retry
-                  </button>
-                </div>
-              )}
-            </div>
+          <div className="max-w-xl mx-auto w-full">
+            <RateLimitWarning
+              cooldown={cooldown}
+              patInput={patInput}
+              setPatInput={setPatInput}
+              showPatConfig={showPatConfig}
+              setShowPatConfig={setShowPatConfig}
+              onSavePat={handleSavePat}
+            />
           </div>
         )}
 
         {/* General Error box */}
         {error && !error.message.includes("Rate Limit Exceeded") && (
-          <div className="max-w-lg mx-auto w-full p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex gap-3.5 items-start text-rose-200">
-            <AlertTriangle className="h-6 w-6 text-rose-500 shrink-0" />
-            <div className="space-y-1">
-              <h4 className="font-bold text-sm">Analysis Failed</h4>
-              <p className="text-xs text-rose-300 leading-relaxed">
-                {error.message}
-              </p>
-              <button
-                type="button"
-                onClick={() => refetch()}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-bold underline mt-2 block"
-              >
-                Retry Request
-              </button>
-            </div>
+          <div className="max-w-lg mx-auto w-full">
+            <ErrorAlert message={error.message} onRetry={() => refetch()} />
           </div>
         )}
 
@@ -269,7 +175,7 @@ export default function RepoPage() {
                 <button
                   type="button"
                   onClick={() => router.push(`/user/${owner}`)}
-                  className="px-3 py-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all shadow"
+                  className="px-3 py-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-330 hover:text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all shadow"
                 >
                   <User className="h-3.5 w-3.5 text-indigo-400" /> Owner profile
                   (@{owner})
@@ -279,33 +185,11 @@ export default function RepoPage() {
                   href={`https://github.com/${owner}/${repo}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all shadow"
+                  className="px-3 py-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-330 hover:text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all shadow"
                 >
-                  <FaGithub className="h-3.5 w-3.5 text-indigo-400" /> GitHub
-                  Repository <ExternalLink className="h-3 w-3 opacity-60" />
+                  <FaGithub className="h-3.5 w-3.5 text-indigo-400" /> Outer
+                  GitHub <ExternalLink className="h-3 w-3 opacity-60" />
                 </a>
-
-                {/* npm link helper */}
-                {owner.toLowerCase() === "npm" ? (
-                  <a
-                    href={`https://www.npmjs.com/package/${repo}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all shadow"
-                  >
-                    <SiNpm className="h-3.5 w-3.5 text-rose-400" /> npm Registry
-                    package <ExternalLink className="h-3 w-3 opacity-60" />
-                  </a>
-                ) : (
-                  <a
-                    href={`https://www.npmjs.com/package/${repo}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-300 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all shadow"
-                  >
-                    <SiNpm className="h-3.5 w-3.5 text-slate-500" /> Search npm
-                  </a>
-                )}
               </div>
 
               {/* Cache status details */}
@@ -320,7 +204,7 @@ export default function RepoPage() {
                 <button
                   type="button"
                   onClick={handleRefresh}
-                  className="flex items-center gap-1 px-4 py-2 bg-slate-950 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold rounded-xl transition-all"
+                  className="flex items-center gap-1 px-4 py-2 bg-slate-950 border border-slate-800 text-slate-330 hover:text-white text-xs font-bold rounded-xl transition-all"
                 >
                   <RefreshCw className="h-3.5 w-3.5" /> Refresh
                 </button>

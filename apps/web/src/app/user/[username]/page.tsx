@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  AlertTriangle,
-  ArrowLeft,
-  RefreshCw,
-  Sparkles,
-  User,
-  X,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, RefreshCw, User } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-// React icons
-import { FaKey } from "react-icons/fa";
 import { AINarrator } from "@/components/dashboard/ai-narrator";
 import { DimensionBreakdown } from "@/components/dashboard/dimension-breakdown";
 import { FindingsList } from "@/components/dashboard/findings-list";
@@ -21,6 +12,10 @@ import { OverviewCard } from "@/components/dashboard/overview-card";
 import { ProfileCard } from "@/components/dashboard/profile-card";
 import { RecommendationsGrid } from "@/components/dashboard/recommendations-grid";
 import { RepositoriesTable } from "@/components/dashboard/repositories-table";
+import { ErrorAlert } from "@/components/ui/error-alert";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { RateLimitWarning } from "@/components/ui/rate-limit-warning";
+import { SuggestionToast } from "@/components/ui/suggestion-toast";
 import { useDeveloperScores } from "@/hooks/use-developer-scores";
 import { useGithubOrgs } from "@/hooks/use-github-orgs";
 import { useGithubUser } from "@/hooks/use-github-user";
@@ -39,7 +34,6 @@ export default function UserPage() {
   const router = useRouter();
   const username = params.username as string;
 
-  const [loadingStep, setLoadingStep] = useState(0);
   const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
   const [linkedNpm, setLinkedNpm] = useState<string>("");
   const [linkedSO, setLinkedSO] = useState<string>("");
@@ -67,15 +61,6 @@ export default function UserPage() {
   const [cooldown, setCooldown] = useState("");
 
   const isInitialLoad = useRef(true);
-
-  // loading steps animation
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    interval = setInterval(() => {
-      setLoadingStep((prev) => (prev < STEPS.length - 1 ? prev + 1 : prev));
-    }, 900);
-    return () => clearInterval(interval);
-  }, []);
 
   // Cooldown countdown timer
   useEffect(() => {
@@ -193,30 +178,11 @@ export default function UserPage() {
       {/* Main Content */}
       <main className="relative max-w-7xl mx-auto px-6 py-12 z-10 flex flex-col gap-10">
         {/* Loading overlay */}
-        {isLoadingCombined && (
-          <div className="max-w-xl mx-auto w-full p-8 bg-slate-900/80 border border-slate-800 rounded-3xl shadow-2xl flex flex-col gap-6 items-center text-center">
-            <div className="relative">
-              <div className="h-16 w-16 border-4 border-indigo-500/10 border-t-indigo-500 rounded-full animate-spin" />
-              <Sparkles className="absolute inset-0 m-auto h-6 w-6 text-indigo-400 animate-pulse" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold">
-                Analyzing Portfolio @{username}...
-              </h3>
-              <p className="text-sm text-slate-400 max-w-sm h-12 flex items-center justify-center">
-                {STEPS[loadingStep]}
-              </p>
-            </div>
-            <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
-              <div
-                className="bg-indigo-500 h-full rounded-full transition-all duration-1000"
-                style={{
-                  width: `${((loadingStep + 1) / STEPS.length) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
+        <LoadingOverlay
+          isLoading={isLoadingCombined}
+          title={`Analyzing Portfolio @${username}...`}
+          steps={STEPS}
+        />
 
         {/* Simple Fallback Center Error Block */}
         {!userQuery.data && errorCombined && (
@@ -250,10 +216,9 @@ export default function UserPage() {
               <button
                 type="button"
                 onClick={handleRefresh}
-                className="flex items-center gap-1 px-4 py-2 bg-slate-950 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold rounded-xl transition-all"
+                className="flex items-center gap-1 px-4 py-2 bg-slate-950 border border-slate-800 text-slate-350 hover:text-white text-xs font-bold rounded-xl transition-all"
               >
-                <RefreshCw className="h-3.5 w-3.5 animate-spin-slow" /> Refresh
-                Analysis
+                <RefreshCw className="h-3.5 w-3.5" /> Refresh Analysis
               </button>
             </div>
 
@@ -337,208 +302,70 @@ export default function UserPage() {
           {errorCombined &&
             !errorCombined.message.includes("Rate Limit Exceeded") &&
             !dismissedError && (
-              <div className="relative pointer-events-auto p-5 bg-rose-950/90 border border-rose-500/30 rounded-2xl flex gap-3.5 items-start text-rose-200 shadow-2xl animate-slide-in">
-                <AlertTriangle className="h-6 w-6 text-rose-500 shrink-0" />
-                <div className="space-y-1 pr-6">
-                  <h4 className="font-bold text-sm">Analysis Failed</h4>
-                  <p className="text-xs text-rose-300 leading-relaxed">
-                    {errorCombined.message}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleRefresh}
-                    className="text-xs text-indigo-400 hover:text-indigo-300 font-bold underline mt-2 block"
-                  >
-                    Retry Request
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDismissedError(true)}
-                  className="absolute top-3 right-3 text-slate-400 hover:text-slate-200"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <ErrorAlert
+                message={errorCombined.message}
+                onRetry={handleRefresh}
+                onDismiss={() => setDismissedError(true)}
+              />
             )}
 
           {/* Toast 2: Rate Limit */}
           {errorCombined?.message.includes("Rate Limit Exceeded") &&
             !dismissedRateLimit && (
-              <div className="relative pointer-events-auto p-6 bg-slate-900/95 border border-rose-500/30 rounded-2xl shadow-2xl flex flex-col gap-4 text-left animate-slide-in">
-                <div className="flex gap-4 items-start text-rose-200">
-                  <AlertTriangle className="h-6 w-6 text-rose-500 shrink-0 mt-1" />
-                  <div className="space-y-1 pr-6">
-                    <h4 className="font-extrabold text-sm text-rose-400">
-                      GitHub API Rate Limit Exceeded
-                    </h4>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      Your search rate limit was reached. It will automatically
-                      reset in{" "}
-                      <strong className="text-indigo-400">
-                        {cooldown || "a moment"}
-                      </strong>
-                      .
-                    </p>
-                  </div>
-                </div>
-
-                {/* PAT retry interface */}
-                <div className="border-t border-slate-800/80 pt-4 mt-1 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-                      <FaKey className="text-indigo-400 h-3.5 w-3.5" /> Have a
-                      token?
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowPatConfig(!showPatConfig)}
-                      className="text-xs font-bold text-indigo-400 hover:text-indigo-300 underline"
-                    >
-                      {showPatConfig ? "Cancel" : "Add Git PAT"}
-                    </button>
-                  </div>
-                  {showPatConfig && (
-                    <div className="flex gap-2">
-                      <input
-                        type="password"
-                        placeholder="ghp_..."
-                        value={patInput}
-                        onChange={(e) => setPatInput(e.target.value)}
-                        className="flex-1 bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-indigo-500/40"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSavePat}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
-                      >
-                        Save & Retry
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDismissedRateLimit(true)}
-                  className="absolute top-3 right-3 text-slate-400 hover:text-slate-200"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <RateLimitWarning
+                cooldown={cooldown}
+                patInput={patInput}
+                setPatInput={setPatInput}
+                showPatConfig={showPatConfig}
+                setShowPatConfig={setShowPatConfig}
+                onSavePat={handleSavePat}
+                onDismiss={() => setDismissedRateLimit(true)}
+              />
             )}
 
           {/* Toast 3: npm Suggestion */}
           {userQuery.data?.metadata?.suggestions?.npm &&
             !linkedNpm &&
             !dismissedNpm && (
-              <div className="relative pointer-events-auto p-5 bg-indigo-950/90 border border-indigo-500/30 rounded-2xl flex flex-col justify-between gap-4 shadow-2xl animate-slide-in">
-                <div>
-                  <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
-                    Suggested npm Identity
-                  </h4>
-                  <p className="text-sm text-slate-200 mt-1 pr-6">
-                    Link npm account{" "}
-                    <strong>
-                      @{userQuery.data.metadata.suggestions.npm.username}
-                    </strong>{" "}
-                    to aggregate package download metrics?
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLinkedNpm(
-                        userQuery.data.metadata.suggestions?.npm?.username ||
-                          "",
-                      )
-                    }
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const userOverride = prompt(
-                        "Enter custom npm username to override:",
-                      );
-                      if (userOverride) setLinkedNpm(userOverride);
-                    }}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all"
-                  >
-                    Override
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDismissedNpm(true)}
-                  className="absolute top-3 right-3 text-slate-400 hover:text-slate-200"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <SuggestionToast
+                title="Suggested npm Identity"
+                message={`Link npm account @${userQuery.data.metadata.suggestions.npm.username} to aggregate package download metrics?`}
+                onConfirm={() =>
+                  setLinkedNpm(
+                    userQuery.data.metadata.suggestions?.npm?.username || "",
+                  )
+                }
+                onOverride={() => {
+                  const userOverride = prompt(
+                    "Enter custom npm username to override:",
+                  );
+                  if (userOverride) setLinkedNpm(userOverride);
+                }}
+                onDismiss={() => setDismissedNpm(true)}
+              />
             )}
 
           {/* Toast 4: StackOverflow Suggestion */}
           {userQuery.data?.metadata?.suggestions?.stackoverflow &&
             !linkedSO &&
             !dismissedSO && (
-              <div className="relative pointer-events-auto p-5 bg-indigo-950/90 border border-indigo-500/30 rounded-2xl flex flex-col justify-between gap-4 shadow-2xl animate-slide-in">
-                <div>
-                  <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
-                    Suggested Stack Overflow Profile
-                  </h4>
-                  <p className="text-sm text-slate-200 mt-1 pr-6">
-                    Link Stack Overflow profile ID{" "}
-                    <strong>
-                      {
-                        userQuery.data.metadata.suggestions.stackoverflow
-                          .profileId
-                      }
-                    </strong>{" "}
-                    (
-                    {
-                      userQuery.data.metadata.suggestions.stackoverflow
-                        .displayName
-                    }
-                    )?
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLinkedSO(
-                        userQuery.data.metadata.suggestions?.stackoverflow
-                          ?.profileId || "",
-                      )
-                    }
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const soOverride = prompt(
-                        "Enter custom Stack Overflow Profile ID to override:",
-                      );
-                      if (soOverride) setLinkedSO(soOverride);
-                    }}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all"
-                  >
-                    Override
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDismissedSO(true)}
-                  className="absolute top-3 right-3 text-slate-400 hover:text-slate-200"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <SuggestionToast
+                title="Suggested Stack Overflow Profile"
+                message={`Link Stack Overflow profile ID ${userQuery.data.metadata.suggestions.stackoverflow.profileId} (${userQuery.data.metadata.suggestions.stackoverflow.displayName})?`}
+                onConfirm={() =>
+                  setLinkedSO(
+                    userQuery.data.metadata.suggestions?.stackoverflow
+                      ?.profileId || "",
+                  )
+                }
+                onOverride={() => {
+                  const soOverride = prompt(
+                    "Enter custom Stack Overflow Profile ID to override:",
+                  );
+                  if (soOverride) setLinkedSO(soOverride);
+                }}
+                onDismiss={() => setDismissedSO(true)}
+              />
             )}
         </div>
       </main>

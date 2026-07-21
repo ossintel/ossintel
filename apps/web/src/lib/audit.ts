@@ -10,6 +10,22 @@ import {
   type NpmPackageStats,
 } from "@ossintel/scoring";
 
+export const mapRepositoryScores = (repositories: NormalizedRepository[]) => {
+  return repositories.map((r) => {
+    const s = calculateRepositoryScore({ repository: r });
+    return {
+      repoName: r.name,
+      fullName: r.fullName,
+      scores: {
+        overall: s.overall,
+        risk: s.risk,
+      },
+      stars: r.stargazersCount,
+      forks: r.forksCount,
+    };
+  });
+};
+
 export const auditDeveloper = (
   developer: NormalizedDeveloper,
   repositories: NormalizedRepository[],
@@ -29,19 +45,7 @@ export const auditDeveloper = (
     linkedIdentities,
   });
 
-  const repoScores = repositories.map((r) => {
-    const s = calculateRepositoryScore({ repository: r });
-    return {
-      repoName: r.name,
-      fullName: r.fullName,
-      scores: {
-        overall: s.overall,
-        risk: s.risk,
-      },
-      stars: r.stargazersCount,
-      forks: r.forksCount,
-    };
-  });
+  const repoScores = mapRepositoryScores(repositories);
 
   return {
     scores,
@@ -66,19 +70,7 @@ export const auditOrganization = (
     name: organization.name,
   });
 
-  const repoScores = repositories.map((r) => {
-    const s = calculateRepositoryScore({ repository: r });
-    return {
-      repoName: r.name,
-      fullName: r.fullName,
-      scores: {
-        overall: s.overall,
-        risk: s.risk,
-      },
-      stars: r.stargazersCount,
-      forks: r.forksCount,
-    };
-  });
+  const repoScores = mapRepositoryScores(repositories);
 
   return {
     scores,

@@ -25,7 +25,7 @@ export const OverviewCard: React.FC<OverviewCardProps> = ({ data }) => {
         <div className="flex flex-col items-center gap-3">
           {/* biome-ignore lint/performance/noImgElement: Github avatars are dynamic external resources loaded at runtime */}
           <img
-            src={data.metadata.avatarUrl}
+            src={data.metadata.avatarUrl || undefined}
             alt={data.metadata.login}
             className="h-16 w-16 rounded-2xl border-2 border-slate-800 shadow-md object-cover"
           />

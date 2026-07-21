@@ -20,6 +20,11 @@ import {
 import { generateInsights } from "@ossintel/insights";
 import { calculateRepositoryScore } from "@ossintel/scoring";
 import { NextResponse } from "next/server";
+import {
+  formatOrgResponse,
+  formatRepoResponse,
+  formatUserResponse,
+} from "../../../lib/api-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -84,33 +89,15 @@ export async function POST(request: Request) {
         scores,
       );
 
-      return NextResponse.json({
-        type: "repo",
-        metadata: {
-          name: repository.name,
-          fullName: repository.fullName,
-          description: repository.description,
-          stars: repository.stargazersCount,
-          forks: repository.forksCount,
-          watchers: repository.watchersCount,
-          openIssues: repository.openIssuesCount,
-          language: repository.language,
-          topics: repository.topics,
-          defaultBranch: repository.defaultBranch,
-          isFork: repository.isFork,
-          isArchived: repository.isArchived,
-          htmlUrl: repository.htmlUrl,
-          pushedAt: repository.pushedAt,
-          updatedAt: repository.updatedAt,
-          owner: repository.owner,
-        },
-        scores,
-        findings: insightsResult.findings,
-        recommendations: insightsResult.recommendations,
-        promptContext: insightsResult.promptContext,
-        languages,
-        contributorsCount: contributors.length,
-      });
+      return NextResponse.json(
+        formatRepoResponse(
+          repository,
+          scores,
+          insightsResult,
+          languages,
+          contributors.length,
+        ),
+      );
     }
 
     // 2. GitHub User or Org (dynamic detection or specific type)
@@ -131,22 +118,7 @@ export async function POST(request: Request) {
           perPage: 100,
         });
 
-        return NextResponse.json({
-          type: "org",
-          metadata: {
-            login: org.login,
-            name: org.name,
-            avatarUrl: org.avatarUrl,
-            htmlUrl: org.htmlUrl,
-            location: org.location,
-            email: org.email,
-            blog: org.blog,
-            publicRepos: org.publicRepos,
-            followers: org.followers,
-            description: org.description,
-          },
-          repositories,
-        });
+        return NextResponse.json(formatOrgResponse(org, repositories));
       } else {
         const developer = await fetchDeveloper(login, options);
         const personalRepos = await fetchRepositories(login, {
@@ -190,30 +162,16 @@ export async function POST(request: Request) {
         // Suggestions
         const suggestions = suggestLinkedIdentities(developer, personalRepos);
 
-        return NextResponse.json({
-          type: "user",
-          metadata: {
-            login: developer.login,
-            name: developer.name,
-            avatarUrl: developer.avatarUrl,
-            htmlUrl: developer.htmlUrl,
-            company: developer.company,
-            blog: developer.blog,
-            location: developer.location,
-            bio: developer.bio,
-            followers: developer.followers,
-            following: developer.following,
-            publicRepos: developer.publicRepos,
-            createdAt: developer.createdAt,
+        return NextResponse.json(
+          formatUserResponse(
+            developer,
+            personalRepos,
             organizations,
+            externalContributions,
             suggestions,
             readme,
-            twitterUsername: developer.twitterUsername,
-            email: developer.email,
-          },
-          repositories: personalRepos,
-          externalContributions,
-        });
+          ),
+        );
       }
     }
 
@@ -226,33 +184,9 @@ export async function POST(request: Request) {
       // Run fallback calculations
       const scores = calculateRepositoryScore({ repository });
       const insightsResult = generateInsights({ repository }, scores);
-      return NextResponse.json({
-        type: "repo",
-        metadata: {
-          name: repository.name,
-          fullName: repository.fullName,
-          description: repository.description,
-          stars: repository.stargazersCount,
-          forks: repository.forksCount,
-          watchers: repository.watchersCount,
-          openIssues: repository.openIssuesCount,
-          language: repository.language,
-          topics: repository.topics,
-          defaultBranch: repository.defaultBranch,
-          isFork: repository.isFork,
-          isArchived: repository.isArchived,
-          htmlUrl: repository.htmlUrl,
-          pushedAt: repository.pushedAt,
-          updatedAt: repository.updatedAt,
-          owner: repository.owner,
-        },
-        scores,
-        findings: insightsResult.findings,
-        recommendations: insightsResult.recommendations,
-        promptContext: insightsResult.promptContext,
-        languages: [],
-        contributorsCount: 0,
-      });
+      return NextResponse.json(
+        formatRepoResponse(repository, scores, insightsResult, [], 0),
+      );
     }
 
     if (
@@ -268,22 +202,7 @@ export async function POST(request: Request) {
           allPages: false,
           perPage: 100,
         });
-        return NextResponse.json({
-          type: "org",
-          metadata: {
-            login: org.login,
-            name: org.name,
-            avatarUrl: org.avatarUrl,
-            htmlUrl: org.htmlUrl,
-            location: org.location,
-            email: org.email,
-            blog: org.blog,
-            publicRepos: org.publicRepos,
-            followers: org.followers,
-            description: org.description,
-          },
-          repositories,
-        });
+        return NextResponse.json(formatOrgResponse(org, repositories));
       } else {
         const developer = await fetchDeveloper(login, options);
         const personalRepos = await fetchRepositories(login, {
@@ -303,30 +222,16 @@ export async function POST(request: Request) {
           console.error("Failed to fetch external contributions", e);
         }
         const suggestions = suggestLinkedIdentities(developer, personalRepos);
-        return NextResponse.json({
-          type: "user",
-          metadata: {
-            login: developer.login,
-            name: developer.name,
-            avatarUrl: developer.avatarUrl,
-            htmlUrl: developer.htmlUrl,
-            company: developer.company,
-            blog: developer.blog,
-            location: developer.location,
-            bio: developer.bio,
-            followers: developer.followers,
-            following: developer.following,
-            publicRepos: developer.publicRepos,
-            createdAt: developer.createdAt,
+        return NextResponse.json(
+          formatUserResponse(
+            developer,
+            personalRepos,
             organizations,
+            externalContributions,
             suggestions,
-            readme: "",
-            twitterUsername: developer.twitterUsername,
-            email: developer.email,
-          },
-          repositories: personalRepos,
-          externalContributions,
-        });
+            "",
+          ),
+        );
       }
     }
 
@@ -363,33 +268,15 @@ export async function POST(request: Request) {
       const scores = calculateRepositoryScore({ repository: mockRepo });
       const insightsResult = generateInsights({ repository: mockRepo }, scores);
 
-      return NextResponse.json({
-        type: "repo",
-        metadata: {
-          name: mockRepo.name,
-          fullName: mockRepo.fullName,
-          description: mockRepo.description,
-          stars: mockRepo.stargazersCount,
-          forks: mockRepo.forksCount,
-          watchers: mockRepo.watchersCount,
-          openIssues: mockRepo.openIssuesCount,
-          language: mockRepo.language,
-          topics: mockRepo.topics,
-          defaultBranch: mockRepo.defaultBranch,
-          isFork: mockRepo.isFork,
-          isArchived: mockRepo.isArchived,
-          htmlUrl: mockRepo.htmlUrl,
-          pushedAt: mockRepo.pushedAt,
-          updatedAt: mockRepo.updatedAt,
-          owner: mockRepo.owner,
-        },
-        scores,
-        findings: insightsResult.findings,
-        recommendations: insightsResult.recommendations,
-        promptContext: insightsResult.promptContext,
-        languages: [{ name: "JavaScript", bytes: 125000 }],
-        contributorsCount: 3,
-      });
+      return NextResponse.json(
+        formatRepoResponse(
+          mockRepo,
+          scores,
+          insightsResult,
+          [{ name: "JavaScript", bytes: 125000 }],
+          3,
+        ),
+      );
     }
 
     return NextResponse.json(
