@@ -1,18 +1,28 @@
-## OSSIntel todo
+# OSSIntel — TODO
 
-- [ ] support npm
-- [ ] next themes
-- [ ] Enhance ecosysem distribution. Show all details as tables - sortable, filterable
+## Active
+- [ ] Support npm package intelligence
+- [ ] Add next-themes for dark mode
+- [ ] Enhance ecosystem distribution — show details as sortable/filterable tables
 
-## Step-by-Step Instructions and Checklist
+## Backlog
+- [ ] Organization Intelligence
+- [ ] GitHub App integration
+- [ ] CLI tool
+- [ ] VS Code Extension
+- [ ] Historical trend tracking
+- [ ] Comparative analysis between developers/repos
+- [ ] Stack Overflow integration
+- [ ] Shared types package (`@ossintel/shared`)
 
-- [ ] Set up `CodeCov`
-  - Visit Codecov and set up your repo
-  - Create [repository secret](<(https://github.com/turboforge-dev/turboforge/settings/secrets/actions)>) for `CODECOV_TOKEN`
-- [ ] Update descriptions in `packages/*/package.json`
-- [ ] (Optional) Add Repo Stats by visiting and setting up [repobeats](https://repobeats.axiom.co/)
-- [ ] Create your libraries and update examples
-- [ ] Update READMEs as required
+## Done
+- [x] Core data normalization pipeline
+- [x] Deterministic scoring engine
+- [x] Insight generation (findings + recommendations)
+- [x] Web dashboard with profile lookup
+- [x] Ecosystem contribution classification
+- [x] Developer intelligence dashboard
+- [x] Repository intelligence dashboard
 
 <hr />
 

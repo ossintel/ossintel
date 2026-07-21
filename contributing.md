@@ -1,90 +1,43 @@
-# Contribution Guidelines
+# Contributing to OSSIntel
 
-## Overview
+## Project Structure
 
-### Included Utilities
+OSSIntel is a monorepo powered by pnpm workspaces and Turborepo.
 
-This template is equipped with pre-configured tools to streamline your development process:
+- **Packages:** `@ossintel/github-normalizer`, `@ossintel/scoring`, `@ossintel/insights`
+- **Apps:** `@app/web` (Next.js 15)
+- **Tooling:**
+  - `tooling/tsconfig/` (shared TypeScript configs)
+  - `tooling/scripts/` (build and release scripts)
+  - `tooling/generators/` (Plop code generators)
 
-- Monorepo setup powered by TurboRepo
-  - TurboRepo is renowned for its efficient builds and caching mechanisms, minimizing unnecessary builds.
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [Biome](https://biomejs.dev) for code linting and formatting
-- Plop-based code generator for effortlessly scaffolding new components
-- Automatic rebranding functionality for this template
-- Workflows facilitating testing, documentation, dependency updates, and deployment of your docs and packages
-- Build setup capable of creating appropriate CJS and ESM builds to support React 18 server and client component exports from the same library
-- Out-of-the-box support for SCSS modules for `lib` and `packages/shared`
+We enforce strict TypeScript, use Biome for linting and formatting, Vitest for testing, and Changesets for releases.
+The package manager used across the monorepo is `pnpm.cmd`.
 
-### Apps and Packages
+## Commands
 
-This TurboRepo comprises the following packages/examples, all written in [TypeScript](https://www.typescriptlang.org/):
+Always use `pnpm.cmd` (do not use npm, yarn, or bare pnpm).
 
-- `@example/nextjs`: a [Next.js](https://nextjs.org/) app
-- `@example/vite`: a [Vite.js](https://vitest.dev) app
-- `@tool/tsconfig`: `tsconfig.json`s used throughout the monorepo
-- `@repo/logger`: A configurable shared logger utility
-- `@repo/shared`: An internal library of components utilized by the examples
-- `react18-loaders`: a React component library (The core package published to NPM)
+- **Install dependencies:** `pnpm.cmd install`
+- **Build all packages and apps:** `pnpm.cmd build`
+- **Start development servers:** `pnpm.cmd dev`
+- **Run tests:** `pnpm.cmd test`
+- **Lint and format:** `pnpm.cmd lint:fix`
+- **Typecheck:** `pnpm.cmd typecheck` (from root) or `pnpm.cmd types:check` (inside `apps/web`)
+- **Generate component:** `pnpm.cmd gen`
+- **Format code:** `pnpm.cmd format`
+- **Release:** `pnpm.cmd release`
 
-## Automated File Generation
+## Workflow
 
-Simply execute `yarn turbo gen` and follow the prompts to automatically generate your new component along with a test file and dependency linking, adhering to best practices.
+### Branches
+Use conventional branch names: `feat/`, `fix/`, `docs/`, `chore/`.
 
-### Build
+### Commits
+We follow [Conventional Commits](https://www.conventionalcommits.org/), which is enforced by commitlint.
 
-To build all apps and packages, execute the following command:
-
-```bash
-pnpm build
-```
-
-### Development
-
-For development of all apps and packages, run:
-
-```bash
-pnpm dev
-```
-
-### Running Unit Tests
-
-To execute unit tests, use:
-
-```bash
-pnpm test
-```
-
-### Linting and Formatting
-
-Before creating a PR, ensure that linting passes and format the code properly with:
-
-```bash
-pnpm lint
-```
-
-and
-
-```bash
-pnpm lint:fix
-```
-
-## Useful Resources
-
-Explore more about TurboRepo and Next.js through the following links:
-
-- [React and Next.js with TypeScript](https://www.udemy.com/course/react-and-next-js-with-typescript/?referralCode=7202184A1E57C3DCA8B2) - an interactive Next.js course.
-- [The Game of Chess with Next.js, React, and TypeScript](https://www.udemy.com/course/game-of-chess-with-nextjs-react-and-typescrypt/?referralCode=851A28F10B254A8523FE)
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
-
-> Quick tip: Remove all stale branches with `git branch --merged main | grep -v '^[ *]*main$' | xargs git branch -d`
-
-> <img src="https://raw.githubusercontent.com/mayank1513/mayank1513/main/popper.png" style="height: 20px"/> Consider enrolling in [our courses](https://mayank-chaudhari.vercel.app/courses) or [sponsoring](https://github.com/sponsors/mayank1513) our work.
+### Pull Requests
+A changeset is required for any package changes. Run `pnpm.cmd changeset` before opening your PR.
 
 <hr />
 
