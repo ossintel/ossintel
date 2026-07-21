@@ -44,8 +44,8 @@
   },
   "forge": {
     "aliases": [],
-    "icon": "LibraryBig",
-    "description": ""
+    "icon": "MessageSquare",
+    "description": "StackOverflow profile statistics fetcher"
   },
   "funding": [
     {

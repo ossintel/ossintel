@@ -1,7 +1,17 @@
 "use client";
 
 import { detectInput } from "@ossintel/github-normalizer";
-import { AlertTriangle, ArrowRight, KeyRound, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Binary,
+  BookOpen,
+  KeyRound,
+  Search,
+  Sparkles,
+  Workflow,
+} from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -133,7 +143,13 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            <Link
+              href="/docs"
+              className="text-sm font-medium text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
+            >
+              <BookOpen className="h-4 w-4" /> Docs
+            </Link>
             <a
               href="https://github.com/mayank1513/ossintel"
               target="_blank"
@@ -301,6 +317,232 @@ export default function HomePage() {
           </div>
         </section>
       </main>
+
+      {/* Structured SEO JSON-LD block */}
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data injection
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            name: "OSSIntel",
+            url: "https://ossintel.js.org",
+            description:
+              "Unified platform metrics, impact scorecards, active community health, and security risk audits for developers, repositories, and organizations.",
+            applicationCategory: "DeveloperApplication",
+            operatingSystem: "All",
+            author: {
+              "@type": "Person",
+              name: "Mayank Kumar Chaudhari",
+            },
+            license: "https://opensource.org/licenses/MIT",
+            softwareHelp: "https://ossintel.js.org/docs",
+            hasPart: [
+              {
+                "@type": "SoftwareSourceCode",
+                name: "@ossintel/scoring",
+                description: "Deterministic reputation metrics engine",
+                codeRepository:
+                  "https://github.com/mayank1513/ossintel/tree/main/packages/scoring",
+              },
+              {
+                "@type": "SoftwareSourceCode",
+                name: "@ossintel/github-normalizer",
+                description: "GitHub API data normalizer",
+                codeRepository:
+                  "https://github.com/mayank1513/ossintel/tree/main/packages/github-normalizer",
+              },
+              {
+                "@type": "SoftwareSourceCode",
+                name: "@ossintel/insights",
+                description: "Rule-based audit insights engine",
+                codeRepository:
+                  "https://github.com/mayank1513/ossintel/tree/main/packages/insights",
+              },
+            ],
+          }),
+        }}
+      />
+
+      {/* Reusable Packages Showcase Section */}
+      <section className="relative border-t border-slate-900 bg-slate-950/40 w-full py-24 z-10">
+        <div className="max-w-7xl mx-auto px-6 space-y-16">
+          <div className="text-center space-y-4 max-w-3xl mx-auto">
+            <h3 className="text-indigo-400 text-xs font-bold uppercase tracking-widest">
+              Modular Architecture
+            </h3>
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent">
+              Powered by Reusable Core Packages
+            </h2>
+            <p className="text-sm md:text-base text-slate-400 font-medium leading-relaxed">
+              OSSIntel is built as a set of decoupled, standard npm modules.
+              Developers can install, extend, and integrate these engines in
+              their own applications.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Scoring Package Card */}
+            <div className="group relative p-6 bg-slate-900/40 border border-slate-800/80 hover:border-indigo-500/30 rounded-3xl transition-all duration-300 flex flex-col justify-between hover:shadow-indigo-500/5 hover:shadow-2xl">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-tr-3xl rounded-bl-full pointer-events-none group-hover:from-indigo-500/15 transition-all" />
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl w-max text-indigo-400 group-hover:border-indigo-500/30 group-hover:text-indigo-300 transition-all">
+                  <Workflow className="h-6 w-6" />
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-base font-bold text-slate-200">
+                    @ossintel/scoring
+                  </h4>
+                  <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider">
+                    Deterministic reputation metrics engine
+                  </p>
+                </div>
+                <p className="text-xs text-slate-450 leading-relaxed">
+                  Evaluates software health, community activity, maintainer
+                  metrics, and organization footprints using pure, deterministic
+                  mathematical models.
+                </p>
+                <ul className="text-[11px] text-slate-500 space-y-1">
+                  <li className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />{" "}
+                    No side-effects, fully deterministic
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />{" "}
+                    Extensible weights and tiers
+                  </li>
+                </ul>
+              </div>
+              <div className="pt-6 mt-auto">
+                <Link
+                  href="/docs/scoring"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors group/link"
+                >
+                  Explore API Docs{" "}
+                  <ArrowRight className="h-3 w-3 group-hover/link:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Normalizer Package Card */}
+            <div className="group relative p-6 bg-slate-900/40 border border-slate-800/80 hover:border-indigo-500/30 rounded-3xl transition-all duration-300 flex flex-col justify-between hover:shadow-indigo-500/5 hover:shadow-2xl">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-tr-3xl rounded-bl-full pointer-events-none group-hover:from-indigo-500/15 transition-all" />
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl w-max text-indigo-400 group-hover:border-indigo-500/30 group-hover:text-indigo-300 transition-all">
+                  <Binary className="h-6 w-6" />
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-base font-bold text-slate-200">
+                    @ossintel/github-normalizer
+                  </h4>
+                  <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider">
+                    GitHub API data normalizer
+                  </p>
+                </div>
+                <p className="text-xs text-slate-450 leading-relaxed">
+                  Fetches and normalizes raw GitHub REST/GraphQL payloads,
+                  handling paginated requests, cache mapping, and rate limits
+                  gracefully.
+                </p>
+                <ul className="text-[11px] text-slate-500 space-y-1">
+                  <li className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />{" "}
+                    Auto-paginated contributions fetcher
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />{" "}
+                    Input type detection (user, org, repo)
+                  </li>
+                </ul>
+              </div>
+              <div className="pt-6 mt-auto">
+                <Link
+                  href="/docs/github-normalizer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors group/link"
+                >
+                  Explore API Docs{" "}
+                  <ArrowRight className="h-3 w-3 group-hover/link:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Insights Package Card */}
+            <div className="group relative p-6 bg-slate-900/40 border border-slate-800/80 hover:border-indigo-500/30 rounded-3xl transition-all duration-300 flex flex-col justify-between hover:shadow-indigo-500/5 hover:shadow-2xl">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-transparent rounded-tr-3xl rounded-bl-full pointer-events-none group-hover:from-indigo-500/15 transition-all" />
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl w-max text-indigo-400 group-hover:border-indigo-500/30 group-hover:text-indigo-300 transition-all">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-base font-bold text-slate-200">
+                    @ossintel/insights
+                  </h4>
+                  <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider">
+                    Rule-based audit insights engine
+                  </p>
+                </div>
+                <p className="text-xs text-slate-450 leading-relaxed">
+                  Generates natural language software findings, flags key risks,
+                  outlines actionable recommendations, and compiles LLM context
+                  blocks.
+                </p>
+                <ul className="text-[11px] text-slate-500 space-y-1">
+                  <li className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />{" "}
+                    Configurable ruleset definitions
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />{" "}
+                    Clean prompt context export
+                  </li>
+                </ul>
+              </div>
+              <div className="pt-6 mt-auto">
+                <Link
+                  href="/docs/insights"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors group/link"
+                >
+                  Explore API Docs{" "}
+                  <ArrowRight className="h-3 w-3 group-hover/link:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Utility Packages Sub-grid */}
+          <div className="pt-8 border-t border-slate-900/60 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-1.5">
+              <h5 className="text-sm font-bold text-slate-300">
+                Additional Modules
+              </h5>
+              <p className="text-xs text-slate-400 leading-normal">
+                Includes{" "}
+                <code className="text-indigo-400 font-mono">@ossintel/npm</code>{" "}
+                (NPM registry statistics fetcher) and{" "}
+                <code className="text-indigo-400 font-mono">
+                  @ossintel/stackoverflow
+                </code>{" "}
+                (StackOverflow profile statistics fetcher).
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <Link
+                href="/docs"
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-500/10 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+              >
+                Ecosystem Overview
+              </Link>
+              <Link
+                href="/docs/scoring"
+                className="px-5 py-2.5 bg-slate-900 border border-slate-800 hover:border-slate-750 hover:bg-slate-900/80 text-slate-300 text-xs font-bold rounded-xl transition-all whitespace-nowrap"
+              >
+                Read Scoring Docs
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="relative border-t border-slate-900 bg-slate-950/20 z-10">

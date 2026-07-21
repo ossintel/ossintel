@@ -44,8 +44,8 @@
   },
   "forge": {
     "aliases": [],
-    "icon": "LibraryBig",
-    "description": ""
+    "icon": "Package",
+    "description": "NPM registry statistics fetcher"
   },
   "funding": [
     {
