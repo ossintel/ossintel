@@ -19,7 +19,7 @@ export default function HomePage() {
   // Check token status on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      fetch("/api/auth/status")
+      fetch("/api/auth/status", { credentials: "same-origin" })
         .then((r) => r.json())
         .then((data) => {
           setHasGithubPat(!!data.hasGithubPat);

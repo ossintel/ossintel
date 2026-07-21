@@ -12,6 +12,7 @@ export async function fetchWithCache<T>(
   const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify(payload),
   });
   const data = await res.json();
@@ -31,11 +32,13 @@ export async function saveSecureToken(
       await fetch("/api/auth/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ token, type }),
       });
     } else {
       await fetch(`/api/auth/token?type=${type}`, {
         method: "DELETE",
+        credentials: "same-origin",
       });
     }
   }

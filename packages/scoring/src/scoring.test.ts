@@ -402,4 +402,131 @@ describe("scoring engine", () => {
     expect(result.badges).toContain("1M npm Downloads");
     expect(result.badges).toContain("OSS Founder");
   });
+
+  test("calculateIdentityScore - adding npm/StackOverflow never decreases scores", () => {
+    const baseInputs = {
+      repositories: [
+        mockRepository({
+          stargazersCount: 50,
+          forksCount: 10,
+        }),
+      ],
+      externalContributions: [],
+      organizations: [],
+    };
+
+    const baseResult = calculateIdentityScore(baseInputs);
+
+    // 1. Add low reputation StackOverflow
+    const withLowSoResult = calculateIdentityScore({
+      ...baseInputs,
+      stackoverflowUser: {
+        userId: "123",
+        displayName: "test-user",
+        reputation: 1,
+        badgeCounts: { gold: 0, silver: 0, bronze: 0 },
+        answerCount: 0,
+        questionCount: 0,
+        acceptanceRate: 0,
+        profileLink: "https://so.com/123",
+        avatarUrl: "",
+        yearsActive: 1,
+        topTags: [],
+      },
+    });
+
+    // 2. Add high reputation StackOverflow
+    const withHighSoResult = calculateIdentityScore({
+      ...baseInputs,
+      stackoverflowUser: {
+        userId: "123",
+        displayName: "test-user",
+        reputation: 100000,
+        badgeCounts: { gold: 50, silver: 100, bronze: 200 },
+        answerCount: 500,
+        questionCount: 10,
+        acceptanceRate: 90,
+        profileLink: "https://so.com/123",
+        avatarUrl: "",
+        yearsActive: 5,
+        topTags: [],
+      },
+    });
+
+    // 3. Add low npm downloads
+    const withLowNpmResult = calculateIdentityScore({
+      ...baseInputs,
+      npmUser: {
+        username: "my-user",
+        url: "https://npmjs.com/~my-user",
+        packages: [],
+        totalDownloads: 0,
+        activePackagesCount: 0,
+        popularPackage: null,
+        isVerifiedPublisher: false,
+      },
+    });
+
+    // 4. Add high npm downloads
+    const withHighNpmResult = calculateIdentityScore({
+      ...baseInputs,
+      npmUser: {
+        username: "my-user",
+        url: "https://npmjs.com/~my-user",
+        packages: [
+          {
+            name: "my-package",
+            downloads: 500000,
+            monthlyDownloads: 2000000,
+            created: "2020-01-01Z",
+            modified: "2020-01-01Z",
+            version: "1.0.0",
+            versionsCount: 1,
+            releaseFrequency: 1,
+            isDeprecated: false,
+            deprecationMessage: null,
+            hasTypeScript: true,
+            hasESM: true,
+            hasCJS: true,
+            license: "MIT",
+            dependentsCount: 10,
+            maintainers: ["my-user"],
+            bugs: null,
+            homepage: null,
+            repository: null,
+            categories: [],
+            description: "test",
+          },
+        ],
+        totalDownloads: 500000,
+        activePackagesCount: 1,
+        popularPackage: "my-package",
+        isVerifiedPublisher: true,
+      },
+    });
+
+    // Verify non-decreasing overall score property
+    expect(withLowSoResult.overall).toBeGreaterThanOrEqual(baseResult.overall);
+    expect(withHighSoResult.overall).toBeGreaterThanOrEqual(
+      withLowSoResult.overall,
+    );
+    expect(withLowNpmResult.overall).toBeGreaterThanOrEqual(baseResult.overall);
+    expect(withHighNpmResult.overall).toBeGreaterThanOrEqual(
+      withLowNpmResult.overall,
+    );
+
+    // Verify non-decreasing influence score property
+    expect(withLowSoResult.influence).toBeGreaterThanOrEqual(
+      baseResult.influence,
+    );
+    expect(withHighSoResult.influence).toBeGreaterThanOrEqual(
+      baseResult.influence,
+    );
+    expect(withLowNpmResult.influence).toBeGreaterThanOrEqual(
+      baseResult.influence,
+    );
+    expect(withHighNpmResult.influence).toBeGreaterThanOrEqual(
+      baseResult.influence,
+    );
+  });
 });

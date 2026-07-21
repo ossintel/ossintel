@@ -296,23 +296,26 @@ export const calculateIdentityScore = (
       sustainedCount++;
     }
 
-    const repoNpm = (npmUser?.packages || []).find(
-      (pkg) =>
-        pkg.name.toLowerCase() === repo.name.toLowerCase() ||
-        pkg.name.toLowerCase().endsWith(`/${repo.name.toLowerCase()}`),
-    );
-    const npmDownloads = repoNpm?.downloads || 0;
-
-    const weight =
-      Math.log10(repo.stargazersCount + repo.forksCount + 1) +
-      1 +
-      Math.log10(npmDownloads + 1) * 1.5;
+    const weight = Math.log10(repo.stargazersCount + repo.forksCount + 1) + 1;
     weightedHealthSum += repoHealth * weight;
     totalWeight += weight;
   }
 
-  const maintainer =
+  const githubMaintainer =
     totalWeight > 0 ? Math.round(weightedHealthSum / totalWeight) : 0;
+
+  // Add npm bonus to maintainer score (never reduces)
+  let npmMaintainerBonus = 0;
+  if (npmUser && totalNpmDownloads > 0) {
+    npmMaintainerBonus = Math.min(
+      10,
+      Math.log10(totalNpmDownloads + 1) * 1.5 + 2,
+    );
+  }
+  const maintainer = Math.min(
+    100,
+    Math.round(githubMaintainer + npmMaintainerBonus),
+  );
 
   // 2. Contributor Score (What you improve upstream)
   const repoPRsMap: Record<
@@ -399,12 +402,21 @@ export const calculateIdentityScore = (
   // 4. Influence Score (Downstream reach)
   const starWeight = Math.log10(totalStarsCount + 1) * 20;
   const forkWeight = Math.log10(totalForksCount + 1) * 20;
-  const npmWeight = Math.log10(totalNpmDownloads + 1) * 20;
-  const soWeight = Math.log10(soRep + 1) * 15;
+  const githubInfluence = Math.min(100, Math.round(starWeight + forkWeight));
+
+  let npmInfluenceBonus = 0;
+  if (npmUser) {
+    npmInfluenceBonus = Math.min(15, Math.log10(totalNpmDownloads + 1) * 2.5);
+  }
+
+  let soInfluenceBonus = 0;
+  if (stackoverflowUser) {
+    soInfluenceBonus = Math.min(15, Math.log10(soRep + 1) * 2.5);
+  }
 
   const influence = Math.min(
     100,
-    Math.round(starWeight + forkWeight + npmWeight + soWeight),
+    Math.round(githubInfluence + npmInfluenceBonus + soInfluenceBonus),
   );
 
   // 5. Confidence Score
@@ -423,20 +435,59 @@ export const calculateIdentityScore = (
     confidence = "Medium";
   }
 
-  // 6. Overall Reputation Score
-  let overall = 0;
+  // 6. Overall Reputation Score (GitHub-first + Additive Evidence Bonuses)
+  let githubOverall = 0;
   if (activeOrgsCount > 0) {
-    overall = Math.round(
-      maintainer * 0.35 +
+    githubOverall = Math.round(
+      githubMaintainer * 0.35 +
         contributor * 0.3 +
         organizationScore * 0.15 +
-        influence * 0.2,
+        githubInfluence * 0.2,
     );
   } else {
-    overall = Math.round(
-      maintainer * 0.45 + contributor * 0.35 + influence * 0.2,
+    githubOverall = Math.round(
+      githubMaintainer * 0.45 + contributor * 0.35 + githubInfluence * 0.2,
     );
   }
+
+  // Compute npm reputation score (0-100)
+  let npmReputationScore = 0;
+  if (npmUser) {
+    const downloadScore = Math.min(100, Math.log10(totalNpmDownloads + 1) * 15);
+    const packageScore = Math.min(100, npmUser.activePackagesCount * 10);
+    const verifiedScore = npmUser.isVerifiedPublisher ? 100 : 0;
+    npmReputationScore = Math.min(
+      100,
+      Math.round(
+        downloadScore * 0.5 + packageScore * 0.3 + verifiedScore * 0.2,
+      ),
+    );
+  }
+
+  // Compute Stack Overflow reputation score (0-100)
+  let soReputationScore = 0;
+  if (stackoverflowUser) {
+    const repScore = Math.min(100, Math.log10(soRep + 1) * 20);
+    const answerScore = Math.min(100, stackoverflowUser.answerCount * 2);
+    const acceptScore = stackoverflowUser.acceptanceRate || 0;
+    soReputationScore = Math.min(
+      100,
+      Math.round(repScore * 0.5 + answerScore * 0.3 + acceptScore * 0.2),
+    );
+  }
+
+  const scalingFactor = 1 + (100 - githubOverall) / 100; // ranges from 1.0 to 2.0
+  const npmWeight = 8; // Max 8 points at scale 1.0 (max 16 at scale 2.0)
+  const soWeight = 8; // Max 8 points at scale 1.0 (max 16 at scale 2.0)
+
+  const npmBonus = npmUser
+    ? (npmReputationScore / 100) * npmWeight * scalingFactor
+    : 0;
+  const soBonus = stackoverflowUser
+    ? (soReputationScore / 100) * soWeight * scalingFactor
+    : 0;
+
+  const overall = Math.min(100, Math.round(githubOverall + npmBonus + soBonus));
 
   // 7. Generic Badge Checks
   const badges: string[] = [];
