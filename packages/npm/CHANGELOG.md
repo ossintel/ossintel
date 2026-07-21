@@ -1,0 +1,7 @@
+# @ossintel/npm
+
+## 0.0.1
+
+### Patch Changes
+
+- [`0398adc`](https://github.com/mayank1513/ossintel/commit/0398adc99373aaa9c43050f131498224a67f44bb) Thanks [@mayank1513](https://github.com/mayank1513)! - Added support for npm and StackOverflow integrations, including unified identity scoring and new interactive UI components.

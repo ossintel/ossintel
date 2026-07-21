@@ -2,7 +2,7 @@
   "name": "@ossintel/stackoverflow",
   "author": "Mayank Kumar Chaudhari <https://mayankchaudhari.com>",
   "private": false,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Robust, typed utilities to fetch, normalize, and sanitize StackOverflow user profiles, reputation, badges, and top tag statistics from the StackExchange API.",
   "license": "MIT",
   "main": "./dist/index.js",
