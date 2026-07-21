@@ -68,14 +68,6 @@ export default function RepoPage() {
     return () => clearInterval(interval);
   }, [rateLimitReset, refresh]);
 
-  // Load token from storage on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedToken = sessionStorage.getItem("github_token");
-      if (savedToken) setPatInput(savedToken);
-    }
-  }, []);
-
   // Read cache timestamp for UI display
   useEffect(() => {
     if (data) {
@@ -94,7 +86,10 @@ export default function RepoPage() {
   };
 
   const handleSavePat = async () => {
-    await savePatCookie(patInput);
+    if (patInput) {
+      await savePatCookie(patInput);
+      setPatInput("");
+    }
     setShowPatConfig(false);
     setRateLimitReset(null);
     setCooldown("");
@@ -104,7 +99,7 @@ export default function RepoPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500/30">
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none opacity-50" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none opacity-50" />
 
       {/* Header */}
       <header className="relative border-b border-slate-800 bg-slate-900/80 backdrop-blur-md z-10">

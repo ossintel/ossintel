@@ -1,5 +1,7 @@
 import { fetchStackOverflowUser } from "@ossintel/stackoverflow";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { decrypt } from "@/lib/crypto-helper";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const key = apiKey || process.env["STACKEXCHANGE_API_KEY"] || undefined;
+    let key = apiKey || process.env["STACKEXCHANGE_API_KEY"] || undefined;
+    if (!key) {
+      try {
+        const cookieStore = await cookies();
+        const soCookie = cookieStore.get("stackoverflow_api_key");
+        if (soCookie?.value) {
+          key = decrypt(soCookie.value);
+        }
+      } catch (err) {
+        console.error("Failed to read SO key from cookies", err);
+      }
+    }
+
     const soUser = await fetchStackOverflowUser(userId, { apiKey: key });
     return NextResponse.json(soUser);
   } catch (error: unknown) {

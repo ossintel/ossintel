@@ -2,6 +2,7 @@
 
 import { AlertTriangle, X } from "lucide-react";
 import type * as React from "react";
+import { useEffect, useState } from "react";
 import { FaKey as KeyIcon } from "react-icons/fa";
 import { Button } from "./button";
 import { Input } from "./input";
@@ -25,6 +26,21 @@ export const RateLimitWarning: React.FC<RateLimitWarningProps> = ({
   onSavePat,
   onDismiss,
 }) => {
+  const [hasGithubPat, setHasGithubPat] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      fetch("/api/auth/status")
+        .then((r) => r.json())
+        .then((data) => {
+          setHasGithubPat(!!data.hasGithubPat);
+        })
+        .catch(() => {
+          setHasGithubPat(false);
+        });
+    }
+  }, []);
+
   return (
     <div className="relative pointer-events-auto p-6 bg-slate-900/95 border border-rose-500/30 rounded-2xl shadow-2xl flex flex-col gap-4 text-left">
       <div className="flex gap-4 items-start text-rose-200">
@@ -61,7 +77,11 @@ export const RateLimitWarning: React.FC<RateLimitWarningProps> = ({
           <div className="flex gap-2">
             <Input
               type="password"
-              placeholder="ghp_..."
+              placeholder={
+                hasGithubPat
+                  ? "•••••••••••••••• (Configured)"
+                  : "Enter GitHub PAT..."
+              }
               value={patInput}
               onChange={(e) => setPatInput(e.target.value)}
               className="flex-1 text-xs h-9 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl"

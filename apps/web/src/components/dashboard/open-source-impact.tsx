@@ -44,7 +44,14 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setHasToken(!!sessionStorage.getItem("github_token"));
+      fetch("/api/auth/status")
+        .then((r) => r.json())
+        .then((data) => {
+          setHasToken(!!data.hasGithubPat);
+        })
+        .catch(() => {
+          setHasToken(false);
+        });
     }
   }, []);
 

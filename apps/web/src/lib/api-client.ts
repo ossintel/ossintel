@@ -9,14 +9,10 @@ export async function fetchWithCache<T>(
   const cached = await getCacheItem<T>(cacheKey);
   if (cached) return cached;
 
-  const token =
-    typeof window !== "undefined"
-      ? sessionStorage.getItem("github_token") || ""
-      : "";
   const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...payload, token }),
+    body: JSON.stringify(payload),
   });
   const data = await res.json();
   if (!res.ok) {
@@ -26,22 +22,27 @@ export async function fetchWithCache<T>(
   return data;
 }
 
-export async function savePatCookie(token: string): Promise<void> {
+export async function saveSecureToken(
+  token: string,
+  type: "github" | "stackoverflow",
+): Promise<void> {
   if (typeof window !== "undefined") {
     if (token) {
-      sessionStorage.setItem("github_token", token);
       await fetch("/api/auth/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token, type }),
       });
     } else {
-      sessionStorage.removeItem("github_token");
-      await fetch("/api/auth/token", {
+      await fetch(`/api/auth/token?type=${type}`, {
         method: "DELETE",
       });
     }
   }
+}
+
+export async function savePatCookie(token: string): Promise<void> {
+  await saveSecureToken(token, "github");
 }
 
 export async function clearCacheItem(cacheKey: string) {

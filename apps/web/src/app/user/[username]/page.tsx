@@ -32,7 +32,7 @@ import { useGithubOrgs } from "@/hooks/use-github-orgs";
 import { useGithubUser } from "@/hooks/use-github-user";
 import { useNpmUser } from "@/hooks/use-npm-user";
 import { useStackOverflowUser } from "@/hooks/use-stackoverflow-user";
-import { savePatCookie } from "@/lib/api-client";
+import { saveSecureToken } from "@/lib/api-client";
 
 const STEPS = [
   "Establishing connection to GitHub APIs...",
@@ -126,6 +126,8 @@ function UserDashboardContent() {
   const [patInput, setPatInput] = useState("");
   const [soApiKeyInput, setSoApiKeyInput] = useState("");
   const [showTokensConfig, setShowTokensConfig] = useState(false);
+  const [hasGithubPat, setHasGithubPat] = useState(false);
+  const [hasSoApiKey, setHasSoApiKey] = useState(false);
 
   // Rate limiting countdown state
   const [rateLimitReset, setRateLimitReset] = useState<string | null>(null);
@@ -156,11 +158,16 @@ function UserDashboardContent() {
   // Load tokens and linked identities from storage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedToken = sessionStorage.getItem("github_token");
-      if (savedToken) setPatInput(savedToken);
-
-      const savedSoKey = sessionStorage.getItem("stackoverflow_api_key");
-      if (savedSoKey) setSoApiKeyInput(savedSoKey);
+      fetch("/api/auth/status")
+        .then((r) => r.json())
+        .then((data) => {
+          setHasGithubPat(!!data.hasGithubPat);
+          setHasSoApiKey(!!data.hasStackOverflowKey);
+        })
+        .catch(() => {
+          setHasGithubPat(false);
+          setHasSoApiKey(false);
+        });
 
       // Load linked identities
       let initialNpm = entryPlatform === "npm" ? username : "";
@@ -247,14 +254,22 @@ function UserDashboardContent() {
   };
 
   const handleSaveTokens = async () => {
-    await savePatCookie(patInput);
-    if (typeof window !== "undefined") {
-      if (soApiKeyInput) {
-        sessionStorage.setItem("stackoverflow_api_key", soApiKeyInput);
-      } else {
-        sessionStorage.removeItem("stackoverflow_api_key");
-      }
+    if (patInput) {
+      await saveSecureToken(patInput, "github");
+      setHasGithubPat(true);
+    } else {
+      await saveSecureToken("", "github");
+      setHasGithubPat(false);
     }
+
+    if (soApiKeyInput) {
+      await saveSecureToken(soApiKeyInput, "stackoverflow");
+      setHasSoApiKey(true);
+    } else {
+      await saveSecureToken("", "stackoverflow");
+      setHasSoApiKey(false);
+    }
+
     setShowTokensConfig(false);
     setRateLimitReset(null);
     setCooldown("");
@@ -490,7 +505,11 @@ function UserDashboardContent() {
                         <input
                           id="github-token-input"
                           type="password"
-                          placeholder="ghp_..."
+                          placeholder={
+                            hasGithubPat
+                              ? "•••••••••••••••• (Configured)"
+                              : "Enter GitHub PAT..."
+                          }
                           value={patInput}
                           onChange={(e) => setPatInput(e.target.value)}
                           className="bg-slate-950 border border-slate-800 outline-none rounded-lg p-2.5 flex-1 text-slate-200 text-xs font-mono"
@@ -498,9 +517,13 @@ function UserDashboardContent() {
                         <button
                           type="button"
                           onClick={async () => {
-                            await savePatCookie(patInput);
-                            if (typeof window !== "undefined") {
-                              sessionStorage.setItem("github_token", patInput);
+                            if (patInput) {
+                              await saveSecureToken(patInput, "github");
+                              setHasGithubPat(true);
+                              setPatInput("");
+                            } else {
+                              await saveSecureToken("", "github");
+                              setHasGithubPat(false);
                             }
                             setShowTokensConfig(false);
                             setRateLimitReset(null);
@@ -535,7 +558,11 @@ function UserDashboardContent() {
                         <input
                           id="stackoverflow-key-input"
                           type="password"
-                          placeholder="Enter Stack Exchange API Key..."
+                          placeholder={
+                            hasSoApiKey
+                              ? "•••••••••••••••• (Configured)"
+                              : "Enter Stack Overflow Key..."
+                          }
                           value={soApiKeyInput}
                           onChange={(e) => setSoApiKeyInput(e.target.value)}
                           className="bg-slate-950 border border-slate-800 outline-none rounded-lg p-2.5 flex-1 text-slate-200 text-xs font-mono"
@@ -543,17 +570,16 @@ function UserDashboardContent() {
                         <button
                           type="button"
                           onClick={async () => {
-                            if (typeof window !== "undefined") {
-                              if (soApiKeyInput) {
-                                sessionStorage.setItem(
-                                  "stackoverflow_api_key",
-                                  soApiKeyInput,
-                                );
-                              } else {
-                                sessionStorage.removeItem(
-                                  "stackoverflow_api_key",
-                                );
-                              }
+                            if (soApiKeyInput) {
+                              await saveSecureToken(
+                                soApiKeyInput,
+                                "stackoverflow",
+                              );
+                              setHasSoApiKey(true);
+                              setSoApiKeyInput("");
+                            } else {
+                              await saveSecureToken("", "stackoverflow");
+                              setHasSoApiKey(false);
                             }
                             setShowTokensConfig(false);
                             handleRefresh();

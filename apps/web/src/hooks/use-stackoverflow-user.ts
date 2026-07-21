@@ -5,21 +5,14 @@ import { clearCacheItem, fetchWithCache } from "@/lib/api-client";
 export const useStackOverflowUser = (userId: string) => {
   const cleanId = userId?.trim();
 
-  // Retrieve stack exchange api key from session storage if present
-  const apiKey =
-    typeof window !== "undefined"
-      ? sessionStorage.getItem("stackoverflow_api_key") || ""
-      : "";
-
   const query = useQuery({
-    queryKey: ["stackoverflow-user", cleanId, apiKey],
+    queryKey: ["stackoverflow-user", cleanId],
     queryFn: () =>
       fetchWithCache<NormalizedStackOverflowUser>(
         `stackoverflow-user:${cleanId}`,
         "/api/stackoverflow/user",
         {
           query: cleanId,
-          apiKey,
         },
       ),
     enabled: !!cleanId,

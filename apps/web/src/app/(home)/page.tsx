@@ -4,7 +4,7 @@ import { detectInput } from "@ossintel/github-normalizer";
 import { AlertTriangle, ArrowRight, KeyRound, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GithubIcon } from "@/components/icons";
 import { savePatCookie } from "@/lib/api-client";
 
@@ -14,6 +14,21 @@ export default function HomePage() {
   const [token, setToken] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasGithubPat, setHasGithubPat] = useState(false);
+
+  // Check token status on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      fetch("/api/auth/status")
+        .then((r) => r.json())
+        .then((data) => {
+          setHasGithubPat(!!data.hasGithubPat);
+        })
+        .catch(() => {
+          setHasGithubPat(false);
+        });
+    }
+  }, []);
 
   const handleAnalyze = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +36,11 @@ export default function HomePage() {
     setError(null);
 
     const performAnalyze = async () => {
-      await savePatCookie(token);
+      if (token) {
+        await savePatCookie(token);
+        setHasGithubPat(true);
+        setToken("");
+      }
 
       try {
         const detection = detectInput(query);
@@ -66,7 +85,11 @@ export default function HomePage() {
   };
 
   const handleQuickSearch = async (q: string, searchType: "repo" | "user") => {
-    await savePatCookie(token);
+    if (token) {
+      await savePatCookie(token);
+      setHasGithubPat(true);
+      setToken("");
+    }
 
     const externalBase = process.env.NEXT_PUBLIC_EXTERNAL_DASHBOARD_URL;
     let targetPath = "";
@@ -206,7 +229,11 @@ export default function HomePage() {
                 <input
                   id="github-pat-input"
                   type="password"
-                  placeholder="ghp_..."
+                  placeholder={
+                    hasGithubPat
+                      ? "•••••••••••••••• (Configured)"
+                      : "Enter GitHub PAT..."
+                  }
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
                   className="bg-slate-950 border border-slate-800 outline-none rounded-lg p-2.5 flex-1 text-slate-200 text-xs font-mono animate-fade-in"
@@ -214,9 +241,13 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={async () => {
-                    await savePatCookie(token);
-                    if (typeof window !== "undefined") {
-                      sessionStorage.setItem("github_token", token);
+                    if (token) {
+                      await savePatCookie(token);
+                      setHasGithubPat(true);
+                      setToken("");
+                    } else {
+                      await savePatCookie("");
+                      setHasGithubPat(false);
                     }
                     setShowSettings(false);
                   }}
@@ -227,7 +258,7 @@ export default function HomePage() {
               </div>
               <p className="text-[10px] text-slate-500 leading-normal">
                 Avoid rate limit exhaustion on busy public IP networks. The
-                token remains in local session storage and is used only for
+                token is sent to a secure HttpOnly cookie and is used only for
                 audit calculations.
               </p>
             </div>
