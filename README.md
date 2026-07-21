@@ -79,15 +79,6 @@ Next.js dashboard — the presentation layer. Business logic lives in the packag
 
 Dependency chain: `github-normalizer` → `scoring` → `insights` → `web`
 
-## Web Dashboard
-
-| Route | Purpose |
-|-------|---------|
-| `/` | Landing page with search |
-| `/user/[username]` | Developer intelligence |
-| `/repo/[owner]/[name]` | Repository intelligence |
-| `/docs/...` | Documentation |
-
 ## Principles
 
 - Deterministic first
@@ -139,7 +130,3 @@ The development workflow includes:
 - GitHub App
 - CLI
 - VS Code Extension
-
-## For AI Models
-
-See [CONTEXT.md](./CONTEXT.md) for a structured project reference optimized for AI consumption.
