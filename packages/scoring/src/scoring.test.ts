@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { calculateIdentityScore, calculateRepositoryScore } from "./scoring";
+import { calculateIdentityScore } from "./identity-scoring";
+import { calculateRepositoryScore } from "./repository-scoring";
 import type { ScoringInputs } from "./types";
 
 const mockRepository = (
