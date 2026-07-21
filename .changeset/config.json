@@ -3,7 +3,7 @@
   "changelog": [
     "@changesets/changelog-github",
     {
-      "repo": "turboforge-dev/turboforge"
+      "repo": "mayank1513/ossintel"
     }
   ],
   "commit": false,
