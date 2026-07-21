@@ -1,6 +1,7 @@
 import { Globe, Languages } from "lucide-react";
 import type React from "react";
 import { GithubIcon } from "@/components/icons";
+import { formatCompactNumber } from "@/lib/format";
 import type { AnalysisData } from "@/lib/types";
 
 interface OverviewCardProps {
@@ -210,14 +211,10 @@ export const OverviewCard: React.FC<OverviewCardProps> = ({
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="bg-slate-950 p-2 rounded-xl border border-slate-800/50 text-center space-y-1">
                 <span className="text-slate-500 font-medium block text-[10px]">
-                  Total Downloads
+                  Total Weekly Downloads
                 </span>
                 <span className="font-extrabold text-emerald-400 text-sm">
-                  {npmStats.totalDownloads >= 1_000_000
-                    ? `${(npmStats.totalDownloads / 1_000_000).toFixed(1)}M`
-                    : npmStats.totalDownloads >= 1_000
-                      ? `${(npmStats.totalDownloads / 1_000).toFixed(1)}k`
-                      : npmStats.totalDownloads.toLocaleString()}
+                  {formatCompactNumber(npmStats.totalDownloads)}
                 </span>
               </div>
               <div className="bg-slate-950 p-2 rounded-xl border border-slate-800/50 text-center space-y-1">

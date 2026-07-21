@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { savePatCookie } from "@/lib/api-client";
+import { formatCompactNumber } from "@/lib/format";
 
 interface OpenSourceImpactProps {
   contributions: NormalizedContribution[];
@@ -332,9 +333,7 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
                 Max Project Stars
               </span>
               <div className="text-2xl font-black text-indigo-400">
-                {maxStars >= 1000
-                  ? `${(maxStars / 1000).toFixed(1)}k`
-                  : maxStars}
+                {formatCompactNumber(maxStars)}
               </div>
               <div className="text-[10px] text-slate-400">
                 Highest star repo reached
@@ -497,9 +496,7 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
                               <td className="p-3 text-slate-300">
                                 <div className="flex items-center gap-1 text-[11px]">
                                   <Star className="h-3.5 w-3.5 fill-amber-500/20 text-amber-500 shrink-0" />
-                                  {dist.stars >= 1000
-                                    ? `${(dist.stars / 1000).toFixed(1)}k`
-                                    : dist.stars}
+                                  {formatCompactNumber(dist.stars)}
                                 </div>
                               </td>
                               <td className="p-3 text-right">
