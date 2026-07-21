@@ -36,11 +36,14 @@ export const useGithubUser = (username: string, limit = 10) => {
   const query = useQuery({
     queryKey: ["user", username?.toLowerCase(), limit],
     queryFn: () =>
-      fetchWithCache<UserResponse>(`user:${username.toLowerCase()}:${limit}`, {
-        type: "user",
-        query: username,
-        limit,
-      }),
+      fetchWithCache<UserResponse>(
+        `user:${username.toLowerCase()}:${limit}`,
+        "/api/github/user",
+        {
+          query: username,
+          limit,
+        },
+      ),
     enabled: !!username,
     retry: false,
   });

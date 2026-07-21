@@ -1,7 +1,9 @@
 "use client";
 
 import type {
+  NormalizedContributor,
   NormalizedLanguage,
+  NormalizedRelease,
   NormalizedRepository,
 } from "@ossintel/github-normalizer";
 import type {
@@ -9,7 +11,9 @@ import type {
   PromptContext,
   Recommendation,
 } from "@ossintel/insights";
+import { generateInsights } from "@ossintel/insights";
 import type { RepositoryScores } from "@ossintel/scoring";
+import { calculateRepositoryScore } from "@ossintel/scoring";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { clearCacheItem, fetchWithCache } from "@/lib/api-client";
 
@@ -45,10 +49,13 @@ export const useGithubOrg = (orgName: string) => {
   const query = useQuery({
     queryKey: ["org", orgName?.toLowerCase()],
     queryFn: () =>
-      fetchWithCache<OrgResponse>(`org:${orgName.toLowerCase()}`, {
-        type: "org",
-        query: orgName,
-      }),
+      fetchWithCache<OrgResponse>(
+        `org:${orgName.toLowerCase()}`,
+        "/api/github/org",
+        {
+          query: orgName,
+        },
+      ),
     enabled: !!orgName,
     retry: false,
   });
@@ -67,10 +74,13 @@ export const useGithubOrgs = (orgNames: string[]) => {
     queries: orgNames.map((orgName) => ({
       queryKey: ["org", orgName.toLowerCase()],
       queryFn: () =>
-        fetchWithCache<OrgResponse>(`org:${orgName.toLowerCase()}`, {
-          type: "org",
-          query: orgName,
-        }),
+        fetchWithCache<OrgResponse>(
+          `org:${orgName.toLowerCase()}`,
+          "/api/github/org",
+          {
+            query: orgName,
+          },
+        ),
       enabled: !!orgName,
       retry: false,
     })),
@@ -97,14 +107,43 @@ export const useGithubOrgs = (orgNames: string[]) => {
   };
 };
 
+export interface RepoRawResponse {
+  repository: NormalizedRepository;
+  contributors: NormalizedContributor[];
+  releases: NormalizedRelease[];
+  languages: NormalizedLanguage[];
+}
+
 export const useGithubRepo = (owner: string, repo: string) => {
   const query = useQuery({
     queryKey: ["repo", owner?.toLowerCase(), repo?.toLowerCase()],
-    queryFn: () =>
-      fetchWithCache<RepoResponse>(
+    queryFn: async () => {
+      const raw = await fetchWithCache<RepoRawResponse>(
         `repo:${owner.toLowerCase()}:${repo.toLowerCase()}`,
-        { type: "repo", owner, repo },
-      ),
+        "/api/github/repo",
+        { owner, repo },
+      );
+      const scores = calculateRepositoryScore({ repository: raw.repository });
+      const insightsResult = generateInsights(
+        {
+          repository: raw.repository,
+          releases: raw.releases,
+          contributors: raw.contributors,
+          languages: raw.languages,
+        },
+        scores,
+      );
+      return {
+        type: "repo" as const,
+        metadata: raw.repository,
+        scores,
+        findings: insightsResult.findings,
+        recommendations: insightsResult.recommendations,
+        promptContext: insightsResult.promptContext,
+        languages: raw.languages,
+        contributorsCount: raw.contributors.length,
+      };
+    },
     enabled: !!owner && !!repo,
     retry: false,
   });
