@@ -32,7 +32,12 @@ export interface IdentityScoringInputs {
   repositories: NormalizedRepository[];
   npmPackages?: NpmPackageStats[];
   externalContributions?: NormalizedContribution[];
-  organizations?: { publicRepos: number; followers?: number; stars?: number }[];
+  organizations?: {
+    login?: string;
+    publicRepos: number;
+    followers?: number;
+    stars?: number;
+  }[];
 }
 
 export interface PillarEvidence {
