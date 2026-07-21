@@ -50,8 +50,8 @@
   },
   "forge": {
     "aliases": [],
-    "icon": "LibraryBig",
-    "description": ""
+    "icon": "Sparkles",
+    "description": "Rule-based audit insights engine"
   },
   "funding": [
     {
