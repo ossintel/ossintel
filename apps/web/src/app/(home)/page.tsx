@@ -150,7 +150,7 @@ export default function HomePage() {
       <main className="relative max-w-7xl mx-auto px-6 py-20 z-10 flex-1 flex flex-col justify-center items-center gap-10">
         <section className="flex flex-col gap-8 text-center max-w-3xl mx-auto w-full">
           <div className="space-y-4">
-            <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent leading-none animate-fade-in">
+            <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-b from-white via-slate-100 to-slate-400 bg-clip-text text-transparent leading-none animate-fade-in pb-4">
               Open Source Intelligence
             </h2>
             <p className="text-lg md:text-xl text-slate-400 max-w-xl mx-auto font-medium">
