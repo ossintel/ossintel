@@ -2,6 +2,8 @@
 
 pnpm typecheck
 
+cd apps/web && pnpm type:check
+
 # Run a topological build to ensure the graph is valid
 # Using --filter prevents checking the whole world if not needed
 # pnpm turbo run build --filter=...[origin/main] -- disabled for fast flow
