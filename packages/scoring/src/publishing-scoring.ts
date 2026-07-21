@@ -28,7 +28,7 @@ export const calculatePublishingScore = (
 ): PublishingScore | null => {
   if (!npmUser) return null;
 
-  const totalDownloads = npmUser.totalDownloads ?? 0;
+  const totalDownloads = npmUser.totalWeeklyDownloads ?? 0;
 
   const downloads = Math.min(100, Math.log10(totalDownloads + 1) * 15);
   const packages = Math.min(100, npmUser.activePackagesCount * 10);

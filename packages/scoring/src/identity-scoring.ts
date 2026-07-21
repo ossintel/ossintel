@@ -37,7 +37,7 @@ export const calculateIdentityScore = (
     (acc, r) => acc + r.forksCount,
     0,
   );
-  const totalNpmDownloads = npmUser?.totalDownloads ?? 0;
+  const totalNpmDownloads = npmUser?.totalWeeklyDownloads ?? 0;
   const soRep = stackoverflowUser?.reputation ?? 0;
 
   // Early exit: no data at all

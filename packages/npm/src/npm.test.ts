@@ -54,7 +54,7 @@ describe("npm normalizer", () => {
     const result = await fetchNpmPackage("test-package");
 
     expect(result.name).toBe("test-package");
-    expect(result.downloads).toBe(1000);
+    expect(result.weeklyDownloads).toBe(1000);
     expect(result.monthlyDownloads).toBe(1000);
     expect(result.hasTypeScript).toBe(true);
     expect(result.hasESM).toBe(true);
@@ -99,7 +99,7 @@ describe("npm normalizer", () => {
     const user = await fetchNpmUser("test-user");
     expect(user.username).toBe("test-user");
     expect(user.packages).toHaveLength(2);
-    expect(user.totalDownloads).toBe(1000);
+    expect(user.totalWeeklyDownloads).toBe(1000);
     expect(user.isVerifiedPublisher).toBe(true);
   });
 });

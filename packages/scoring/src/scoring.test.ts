@@ -354,7 +354,7 @@ describe("scoring engine", () => {
         packages: [
           {
             name: "my-package",
-            downloads: 2000000, // 2M weekly downloads
+            weeklyDownloads: 2000000, // 2M weekly downloads
             monthlyDownloads: 8000000,
             created: "2020-01-01Z",
             modified: "2020-01-01Z",
@@ -376,7 +376,7 @@ describe("scoring engine", () => {
             description: "My library",
           },
         ],
-        totalDownloads: 2000000,
+        totalWeeklyDownloads: 2000000,
         activePackagesCount: 1,
         popularPackage: "my-package",
         isVerifiedPublisher: true,
@@ -461,7 +461,7 @@ describe("scoring engine", () => {
         username: "my-user",
         url: "https://npmjs.com/~my-user",
         packages: [],
-        totalDownloads: 0,
+        totalWeeklyDownloads: 0,
         activePackagesCount: 0,
         popularPackage: null,
         isVerifiedPublisher: false,
@@ -477,7 +477,7 @@ describe("scoring engine", () => {
         packages: [
           {
             name: "my-package",
-            downloads: 500000,
+            weeklyDownloads: 500000,
             monthlyDownloads: 2000000,
             created: "2020-01-01Z",
             modified: "2020-01-01Z",
@@ -499,7 +499,7 @@ describe("scoring engine", () => {
             description: "test",
           },
         ],
-        totalDownloads: 500000,
+        totalWeeklyDownloads: 500000,
         activePackagesCount: 1,
         popularPackage: "my-package",
         isVerifiedPublisher: true,

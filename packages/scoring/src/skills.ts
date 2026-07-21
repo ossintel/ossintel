@@ -76,7 +76,7 @@ export const calculateSkills = (inputs: SkillsInputs): TopicExpertise[] => {
       }
       for (const cat of matchedCats) {
         skillsMap[cat].npmPackages += 1;
-        skillsMap[cat].npmDownloads += pkg.downloads;
+        skillsMap[cat].npmDownloads += pkg.weeklyDownloads;
       }
     }
   }

@@ -201,7 +201,7 @@ export async function fetchNpmPackage(
 
   return {
     name: registryData.name,
-    downloads: weeklyDownloads,
+    weeklyDownloads: weeklyDownloads,
     monthlyDownloads,
     created: createdDate,
     modified: modifiedDate,
@@ -271,18 +271,20 @@ export async function fetchNpmUser(
   }
 
   // 3. Compile aggregate metrics
-  let totalDownloads = 0;
+  let totalWeeklyDownloads = 0;
+  let totalMonthlyDownloads = 0;
   let activePackagesCount = 0;
   let maxDownloads = -1;
   let popularPackage: string | null = null;
 
   for (const pkg of packages) {
-    totalDownloads += pkg.downloads;
+    totalWeeklyDownloads += pkg.weeklyDownloads;
+    totalMonthlyDownloads += pkg.monthlyDownloads;
     if (!pkg.isDeprecated) {
       activePackagesCount++;
     }
-    if (pkg.downloads > maxDownloads) {
-      maxDownloads = pkg.downloads;
+    if (pkg.weeklyDownloads > maxDownloads) {
+      maxDownloads = pkg.weeklyDownloads;
       popularPackage = pkg.name;
     }
   }
@@ -291,7 +293,8 @@ export async function fetchNpmUser(
     username: cleanUsername,
     url: `https://www.npmjs.com/~${cleanUsername}`,
     packages,
-    totalDownloads,
+    totalWeeklyDownloads,
+    totalMonthlyDownloads,
     activePackagesCount,
     popularPackage,
     isVerifiedPublisher: packages.length > 0,

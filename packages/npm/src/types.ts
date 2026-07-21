@@ -56,7 +56,7 @@ export interface RawNpmPackageDownloads {
 
 export interface NormalizedNpmPackage {
   name: string;
-  downloads: number; // Weekly downloads
+  weeklyDownloads: number; // Weekly downloads
   monthlyDownloads: number;
   created: string; // ISO String
   modified: string; // ISO String
@@ -82,7 +82,8 @@ export interface NormalizedNpmUser {
   username: string;
   url: string;
   packages: NormalizedNpmPackage[];
-  totalDownloads: number;
+  totalWeeklyDownloads: number;
+  totalMonthlyDownloads: number;
   activePackagesCount: number;
   popularPackage: string | null;
   isVerifiedPublisher: boolean;
