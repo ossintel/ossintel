@@ -12,7 +12,15 @@
         "./packages/insights/src",
         "./packages/insights/dist"
       ],
-      "@ossintel/scoring": ["./packages/scoring/src", "./packages/scoring/dist"]
+      "@ossintel/npm": ["./packages/npm/src", "./packages/npm/dist"],
+      "@ossintel/scoring": [
+        "./packages/scoring/src",
+        "./packages/scoring/dist"
+      ],
+      "@ossintel/stackoverflow": [
+        "./packages/stackoverflow/src",
+        "./packages/stackoverflow/dist"
+      ]
     }
   }
 }

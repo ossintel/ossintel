@@ -1,9 +1,9 @@
 {
-  "name": "@ossintel/github-normalizer",
+  "name": "@ossintel/npm",
   "author": "Mayank Kumar Chaudhari <https://mayankchaudhari.com>",
   "private": false,
   "version": "0.0.0",
-  "description": "Robust, typed utilities to fetch, normalize, and sanitize raw GitHub REST and GraphQL API responses into consistent domain structures for open-source analytics.",
+  "description": "Robust, typed utilities to fetch, normalize, and sanitize raw npm Registry and download statistics API responses into consistent domain structures for open-source analytics.",
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -24,10 +24,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/mayank1513/ossintel",
-    "directory": "packages/github-normalizer"
+    "directory": "packages/npm"
   },
   "bugs": "https://github.com/mayank1513/ossintel/issues",
-  "homepage": "https://github.com/mayank1513/ossintel/blob/main/packages/github-normalizer/README.md",
+  "homepage": "https://github.com/mayank1513/ossintel/blob/main/packages/npm/README.md",
   "sideEffects": false,
   "files": [
     "dist/**"
@@ -43,10 +43,7 @@
     "typescript": "latest"
   },
   "forge": {
-    "aliases": [
-      "@ossintel/github",
-      "github-normalizer"
-    ],
+    "aliases": [],
     "icon": "LibraryBig",
     "description": ""
   },
@@ -54,16 +51,21 @@
     {
       "type": "github",
       "url": "https://github.com/sponsors/mayank1513"
+    },
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/mayank1513"
     }
   ],
   "keywords": [
-    "github-api",
-    "github-graphql",
+    "npm-registry",
+    "npm-downloads",
     "data-normalization",
     "open-source",
     "analytics",
     "ossintel",
     "typescript",
-    "fetch"
+    "fetch",
+    "turboforge"
   ]
 }

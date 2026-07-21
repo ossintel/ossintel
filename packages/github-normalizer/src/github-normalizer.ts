@@ -258,7 +258,45 @@ export async function fetchOrganization(
 export function detectInput(input: string): InputDetectionResult {
   const trimmed = input.trim();
 
-  // 1. Check if it's a URL
+  // 1. Check prefix shortcuts
+  if (trimmed.startsWith("npm:pkg:")) {
+    return {
+      platform: "npm",
+      type: "package",
+      name: trimmed.slice(8),
+      rawInput: trimmed,
+    };
+  }
+
+  if (trimmed.startsWith("npm:")) {
+    return {
+      platform: "npm",
+      type: "user",
+      name: trimmed.slice(4),
+      rawInput: trimmed,
+    };
+  }
+
+  if (trimmed.startsWith("~")) {
+    return {
+      platform: "npm",
+      type: "user",
+      name: trimmed.slice(1),
+      rawInput: trimmed,
+    };
+  }
+
+  if (trimmed.startsWith("so:") || trimmed.startsWith("stackoverflow:")) {
+    const prefixLen = trimmed.startsWith("so:") ? 3 : 14;
+    return {
+      platform: "stackoverflow",
+      type: "user",
+      profileId: trimmed.slice(prefixLen),
+      rawInput: trimmed,
+    };
+  }
+
+  // 2. Check if it's a URL
   try {
     const url = new URL(
       trimmed.startsWith("http") ? trimmed : `https://${trimmed}`,

@@ -82,9 +82,15 @@ importers:
       '@ossintel/insights':
         specifier: workspace:*
         version: link:../../packages/insights
+      '@ossintel/npm':
+        specifier: workspace:*
+        version: link:../../packages/npm
       '@ossintel/scoring':
         specifier: workspace:*
         version: link:../../packages/scoring
+      '@ossintel/stackoverflow':
+        specifier: workspace:*
+        version: link:../../packages/stackoverflow
       '@promptshield/tiptap':
         specifier: latest
         version: 0.0.2(@tiptap/core@3.28.0(@tiptap/pm@3.28.0))(@tiptap/pm@3.28.0)
@@ -203,9 +209,27 @@ importers:
       '@ossintel/github-normalizer':
         specifier: workspace:*
         version: link:../github-normalizer
+      '@ossintel/npm':
+        specifier: workspace:*
+        version: link:../npm
       '@ossintel/scoring':
         specifier: workspace:*
         version: link:../scoring
+      '@ossintel/stackoverflow':
+        specifier: workspace:*
+        version: link:../stackoverflow
+    devDependencies:
+      '@types/node':
+        specifier: latest
+        version: 26.1.1
+      tsup:
+        specifier: latest
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.19)(typescript@6.0.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
+  packages/npm:
     devDependencies:
       '@types/node':
         specifier: latest
@@ -222,6 +246,24 @@ importers:
       '@ossintel/github-normalizer':
         specifier: workspace:*
         version: link:../github-normalizer
+      '@ossintel/npm':
+        specifier: workspace:*
+        version: link:../npm
+      '@ossintel/stackoverflow':
+        specifier: workspace:*
+        version: link:../stackoverflow
+    devDependencies:
+      '@types/node':
+        specifier: latest
+        version: 26.1.1
+      tsup:
+        specifier: latest
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.19)(typescript@6.0.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
+  packages/stackoverflow:
     devDependencies:
       '@types/node':
         specifier: latest
