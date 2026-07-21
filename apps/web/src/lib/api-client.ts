@@ -17,7 +17,18 @@ export async function fetchWithCache<T>(
   });
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.error || "Request failed");
+    const message = data.message || data.error || "Request failed";
+    const errorObj = new Error(message);
+    if (
+      data.error === "rate_limit" ||
+      message.includes("Rate Limit Exceeded")
+    ) {
+      (errorObj as { isRateLimit?: boolean; resetTime?: string }).isRateLimit =
+        true;
+      (errorObj as { isRateLimit?: boolean; resetTime?: string }).resetTime =
+        data.resetTime;
+    }
+    throw errorObj;
   }
   await setCacheItem(cacheKey, data, ttlSeconds);
   return data;

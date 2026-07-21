@@ -14,8 +14,8 @@ import { ErrorAlert } from "@/components/ui/error-alert";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { RateLimitWarning } from "@/components/ui/rate-limit-warning";
 import { useGithubRepo } from "@/hooks/use-github-orgs";
-import { savePatCookie } from "@/lib/api-client";
 import { getCacheTimestamp } from "@/lib/cache";
+import { parseRateLimitError } from "@/lib/utils";
 
 const STEPS = [
   "Establishing connection to GitHub APIs...",
@@ -37,36 +37,8 @@ export default function RepoPage() {
   const { data, error, isLoading, refetch, isFetching, refresh } =
     useGithubRepo(owner, repo);
 
-  // PAT config state
-  const [patInput, setPatInput] = useState("");
-  const [showPatConfig, setShowPatConfig] = useState(false);
-
-  // Rate limiting countdown state
-  const [rateLimitReset, setRateLimitReset] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState("");
-
   // Cached state indicator
   const [cachedTime, setCachedTime] = useState<string | null>(null);
-
-  // Cooldown countdown timer
-  useEffect(() => {
-    if (!rateLimitReset) return;
-    const interval = setInterval(() => {
-      const resetDate = new Date(rateLimitReset);
-      const diffSec = Math.ceil((resetDate.getTime() - Date.now()) / 1000);
-      if (diffSec <= 0) {
-        setRateLimitReset(null);
-        setCooldown("");
-        clearInterval(interval);
-        refresh();
-      } else {
-        const mins = Math.floor(diffSec / 60);
-        const secs = diffSec % 60;
-        setCooldown(mins > 0 ? `${mins}m ${secs}s` : `${secs}s`);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [rateLimitReset, refresh]);
 
   // Read cache timestamp for UI display
   useEffect(() => {
@@ -85,17 +57,6 @@ export default function RepoPage() {
     refresh();
   };
 
-  const handleSavePat = async () => {
-    if (patInput) {
-      await savePatCookie(patInput);
-      setPatInput("");
-    }
-    setShowPatConfig(false);
-    setRateLimitReset(null);
-    setCooldown("");
-    handleRefresh();
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500/30">
       {/* Background decoration */}
@@ -111,21 +72,14 @@ export default function RepoPage() {
         />
 
         {/* Custom Rate Limit Error Box */}
-        {error?.message.includes("Rate Limit Exceeded") && (
+        {error && parseRateLimitError(error).isRateLimit && (
           <div className="max-w-xl mx-auto w-full">
-            <RateLimitWarning
-              cooldown={cooldown}
-              patInput={patInput}
-              setPatInput={setPatInput}
-              showPatConfig={showPatConfig}
-              setShowPatConfig={setShowPatConfig}
-              onSavePat={handleSavePat}
-            />
+            <RateLimitWarning error={error} onRetry={refresh} />
           </div>
         )}
 
         {/* General Error box */}
-        {error && !error.message.includes("Rate Limit Exceeded") && (
+        {error && !parseRateLimitError(error).isRateLimit && (
           <div className="max-w-lg mx-auto w-full">
             <ErrorAlert message={error.message} onRetry={() => refetch()} />
           </div>

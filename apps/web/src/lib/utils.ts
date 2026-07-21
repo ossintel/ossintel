@@ -21,3 +21,29 @@ export const formatLastUpdated = (date: string | Date) => {
     year: "numeric",
   });
 };
+
+export interface RateLimitErrorDetails {
+  isRateLimit: boolean;
+  resetTime: string | null;
+}
+
+export function parseRateLimitError(error: unknown): RateLimitErrorDetails {
+  if (!error) return { isRateLimit: false, resetTime: null };
+
+  const errObj = error as {
+    isRateLimit?: boolean;
+    resetTime?: string;
+    message?: string;
+  };
+
+  const isRateLimit = !!(
+    errObj.isRateLimit ||
+    errObj.message?.includes("rate_limit") ||
+    errObj.message?.includes("Rate Limit Exceeded")
+  );
+
+  return {
+    isRateLimit,
+    resetTime: isRateLimit ? errObj.resetTime || null : null,
+  };
+}

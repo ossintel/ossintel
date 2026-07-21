@@ -7,7 +7,7 @@ import {
   RefreshCw,
   User,
 } from "lucide-react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { AINarrator } from "@/components/dashboard/ai-narrator";
 import { DimensionBreakdown } from "@/components/dashboard/dimension-breakdown";
@@ -32,6 +32,7 @@ import { useGithubUser } from "@/hooks/use-github-user";
 import { useNpmUser } from "@/hooks/use-npm-user";
 import { useStackOverflowUser } from "@/hooks/use-stackoverflow-user";
 import { saveSecureToken } from "@/lib/api-client";
+import { parseRateLimitError } from "@/lib/utils";
 
 const STEPS = [
   "Establishing connection to GitHub APIs...",
@@ -63,7 +64,6 @@ export default function UserPage() {
 
 function UserDashboardContent() {
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const username = params.username as string;
 
@@ -121,6 +121,19 @@ function UserDashboardContent() {
   // 4. Fetch StackOverflow data if SO account is linked
   const soQuery = useStackOverflowUser(linkedSO);
 
+  const isLoadingCombined =
+    userQuery.isLoading ||
+    orgsQuery.isLoading ||
+    npmQuery.isLoading ||
+    soQuery.isLoading;
+  const isFetchingCombined =
+    userQuery.isFetching ||
+    orgsQuery.isFetching ||
+    npmQuery.isFetching ||
+    soQuery.isFetching;
+  const errorCombined =
+    userQuery.error || orgsQuery.error || npmQuery.error || soQuery.error;
+
   // API Key configurations state
   const [patInput, setPatInput] = useState("");
   const [soApiKeyInput, setSoApiKeyInput] = useState("");
@@ -128,31 +141,7 @@ function UserDashboardContent() {
   const [hasGithubPat, setHasGithubPat] = useState(false);
   const [hasSoApiKey, setHasSoApiKey] = useState(false);
 
-  // Rate limiting countdown state
-  const [rateLimitReset, setRateLimitReset] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState("");
-
   const isInitialLoad = useRef(true);
-
-  // Cooldown countdown timer
-  useEffect(() => {
-    if (!rateLimitReset) return;
-    const interval = setInterval(() => {
-      const resetDate = new Date(rateLimitReset);
-      const diffSec = Math.ceil((resetDate.getTime() - Date.now()) / 1000);
-      if (diffSec <= 0) {
-        setRateLimitReset(null);
-        setCooldown("");
-        clearInterval(interval);
-        userQuery.refetch();
-      } else {
-        const mins = Math.floor(diffSec / 60);
-        const secs = diffSec % 60;
-        setCooldown(mins > 0 ? `${mins}m ${secs}s` : `${secs}s`);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [rateLimitReset, userQuery]);
 
   // Load tokens and linked identities from storage on mount
   useEffect(() => {
@@ -252,29 +241,6 @@ function UserDashboardContent() {
     }
   };
 
-  const handleSaveTokens = async () => {
-    if (patInput) {
-      await saveSecureToken(patInput, "github");
-      setHasGithubPat(true);
-    } else {
-      await saveSecureToken("", "github");
-      setHasGithubPat(false);
-    }
-
-    if (soApiKeyInput) {
-      await saveSecureToken(soApiKeyInput, "stackoverflow");
-      setHasSoApiKey(true);
-    } else {
-      await saveSecureToken("", "stackoverflow");
-      setHasSoApiKey(false);
-    }
-
-    setShowTokensConfig(false);
-    setRateLimitReset(null);
-    setCooldown("");
-    handleRefresh();
-  };
-
   // Extract social links (LinkedIn and Stack Overflow) from user metadata if available
   const linkedinUrl = useMemo(() => {
     const metadata = userQuery.data?.metadata as
@@ -358,19 +324,6 @@ function UserDashboardContent() {
     };
   }, [clientIntel, userQuery.data, githubUsername]);
 
-  const isLoadingCombined =
-    userQuery.isLoading ||
-    orgsQuery.isLoading ||
-    npmQuery.isLoading ||
-    soQuery.isLoading;
-  const isFetchingCombined =
-    userQuery.isFetching ||
-    orgsQuery.isFetching ||
-    npmQuery.isFetching ||
-    soQuery.isFetching;
-  const errorCombined =
-    userQuery.error || orgsQuery.error || npmQuery.error || soQuery.error;
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500/30">
       {/* Background decoration */}
@@ -399,7 +352,7 @@ function UserDashboardContent() {
                 metrics:
               </p>
             </div>
-            <div className="flex gap-2 w-full">
+            <div className="flex flex-col gap-2 w-full">
               <input
                 type="text"
                 placeholder="Enter GitHub Username..."
@@ -501,8 +454,6 @@ function UserDashboardContent() {
                               setHasGithubPat(false);
                             }
                             setShowTokensConfig(false);
-                            setRateLimitReset(null);
-                            setCooldown("");
                             handleRefresh();
                           }}
                           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all shrink-0"
@@ -790,7 +741,7 @@ function UserDashboardContent() {
         <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 max-w-sm w-full pointer-events-none">
           {/* Toast 1: General Error */}
           {errorCombined &&
-            !errorCombined.message.includes("Rate Limit Exceeded") &&
+            !parseRateLimitError(errorCombined).isRateLimit &&
             !dismissedError && (
               <ErrorAlert
                 message={errorCombined.message}
@@ -800,15 +751,12 @@ function UserDashboardContent() {
             )}
 
           {/* Toast 2: Rate Limit */}
-          {userQuery.error?.message?.includes("Rate Limit Exceeded") &&
+          {errorCombined &&
+            parseRateLimitError(errorCombined).isRateLimit &&
             !dismissedRateLimit && (
               <RateLimitWarning
-                cooldown={cooldown}
-                patInput={patInput}
-                setPatInput={setPatInput}
-                showPatConfig={showTokensConfig}
-                setShowPatConfig={setShowTokensConfig}
-                onSavePat={handleSaveTokens}
+                error={errorCombined}
+                onRetry={handleRefresh}
                 onDismiss={() => setDismissedRateLimit(true)}
               />
             )}
