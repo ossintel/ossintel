@@ -1,109 +1,65 @@
-# Turboforge
+# Turboforge Conventions
 
-![Turboforge banner](./.github/assets/turboforge-banner.jpg)
+Turboforge keeps this monorepo aligned: consistent package shape, shared tooling, docs pipeline, and upgrade path from upstream templates.
 
-Turboforge is a monorepo operating system for teams that want strong defaults without freezing their codebase in a starter template.
+## Generators
 
-Most monorepos start clean and get messy fast. Templates drift. Package conventions split. Release tooling forks. Docs become a side project. Turboforge keeps your repo aligned after day one, not just at scaffold time.
+Scaffold new packages or components with Plop — do not hand-roll new packages.
 
-## The Problem
+```bash
+pnpm.cmd gen          # list available generators
+pnpm.cmd gen pkg       # scaffold a new package
+```
 
-Turborepo solves task orchestration. It does not define how your repo should evolve.
+## File Naming
 
-Templates solve day-zero setup. They do not help when the template improves next month and your repo has already diverged.
+All source files use **dash-case**: `profile-card.tsx`, `use-intel.ts`, `api-helpers.ts`.  
+Folders are lowercased and domain-scoped.
 
-Custom scripts solve immediate problems. They usually become one-off glue that only one person understands.
+## Docs Automation
 
-That leaves most teams with the same failure mode:
+API docs are generated via Typedoc and rendered as MDX through Fumadocs.
 
-- a good starting point
-- slow drift across packages
-- duplicated CLI logic
-- manual upgrade work
-- docs and tooling that stop feeling like one system
+**Do not break:**
 
-Turboforge exists to close that gap.
+- `fumadocs-mdx` compilation (`fumadocs-mdx && next build`)
+- Typedoc output format (used by `@turboforge/remark-typedoc-mdx`)
+- MDX rendering in `docs/[[...slug]]/`
 
-## The Solution
+JSDoc all exported functions — Typedoc picks these up automatically.
 
-Turboforge gives you a maintainable path from “we have a monorepo” to “we have a coherent engineering system.”
+## Lint & Format
 
-It does that with a focused set of building blocks:
+Global Biome config at root `biome.json`. Shared rules apply to all packages.
 
-- a sync engine to pull upstream template changes into a real, already-customized repo
-- a monorepo-aware CLI foundation for shared config, root detection, and logging
-- a docs pipeline to turn API output into MDX that lives alongside your product docs
+```bash
+pnpm.cmd lint:fix     # fix all violations + format
+```
 
-The goal is not more tooling. The goal is a repo that stays legible as it grows.
+No per-package Biome config unless overriding a specific rule — keep it DRY.
 
-## Highlights
+## Testing
 
-- Sync upstream template changes into a repo that already has local decisions.
-- Build monorepo-aware CLIs on shared config, root detection, and logging primitives.
-- Turn generated TypeDoc output into MDX that fits your docs system.
+Vitest with shared config at root `vitest.config.mts`. Coverage via `@vitest/coverage-v8`.
 
-## Positioning
+```bash
+pnpm.cmd test         # run all tests with coverage
+```
 
-### One-liner
+Test files live next to source: `scoring.ts` → `scoring.test.ts`.
+For filtering tests, use `pnpm.cmd test -- <pattern>`.
 
-Turboforge is the layer that keeps your monorepo from drifting apart.
+## TypeScript
 
-### Who it is for
+Shared configs in `tooling/tsconfig/`. Extend the right base:
 
-Turboforge is for teams maintaining a JavaScript or TypeScript monorepo with shared standards, internal tooling, and a need to stay consistent over time.
+- `@tool/tsconfig/library` — for packages
+- `@tool/tsconfig/nextjs` — for `apps/web`
 
-It is especially useful for:
+Do not duplicate TS options already defined in the shared config.
 
-- OSS maintainers shipping multiple packages from one repo
-- startup teams building platform-style monorepos
-- developer experience teams standardizing workflows across apps and packages
+## Release
 
-## Philosophy
+A changeset is required for every package change before merging.
 
-### 1. Opinionated beats vague
-
-Good tooling should make tradeoffs on purpose. Turboforge assumes you want conventions, not a blank page.
-
-### 2. Day-two matters more than day-zero
-
-A scaffold is easy. Keeping dozens of packages aligned over time is the real work.
-
-### 3. Composition over lock-in
-
-Each package has a clear job. You can adopt one piece or use the full system.
-
-### 4. Upgrades should be a workflow, not a rewrite
-
-Templates are valuable only if changes can keep flowing downstream.
-
-### 5. Docs are part of the product
-
-Tooling, packages, and documentation should reinforce one another instead of living in separate worlds.
-
-## Mental Model
-
-Think of Turboforge in three layers:
-
-1. Define a strong repo shape.
-2. Keep that shape aligned as the template evolves.
-3. Build tooling and docs that inherit the same conventions.
-
-Turboforge does not replace your package manager, task runner, or framework.
-
-It sits above them and answers a different question:
-
-How do we keep this monorepo intentional as it grows?
-
-## What Turboforge Is Not
-
-- Not a Turborepo replacement. Turborepo runs tasks; Turboforge maintains structure.
-- Not just a starter. Templates get you started; Turboforge keeps them relevant.
-- Not a pile of scripts. The pieces are reusable and form a system.
-
-## Why This Is Different
-
-Most monorepo tooling helps you run work faster.
-
-Turboforge helps you keep that work organized over time.
-
-The hard part of a monorepo is not starting it. It is preventing drift.
+Always add changesets for any package change, even if it is a minor fix. Changesets are used to generate the changelog and version bumps.
