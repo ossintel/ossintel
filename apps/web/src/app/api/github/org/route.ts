@@ -4,6 +4,7 @@ import {
   GitHubRateLimitError,
 } from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
+import { formatOrgResponse } from "@/lib/api-helpers";
 import { getDecryptedToken } from "@/lib/cookie-token";
 
 export const dynamic = "force-dynamic";
@@ -23,10 +24,7 @@ export async function POST(request: Request) {
       perPage: 100,
     });
 
-    return NextResponse.json({
-      organization: org,
-      repositories,
-    });
+    return NextResponse.json(formatOrgResponse(org, repositories));
   } catch (error: unknown) {
     console.error("Organization API failed", error);
     if (

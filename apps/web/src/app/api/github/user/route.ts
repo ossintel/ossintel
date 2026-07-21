@@ -8,6 +8,7 @@ import {
   suggestLinkedIdentities,
 } from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
+import { formatUserResponse } from "@/lib/api-helpers";
 import { getDecryptedToken } from "@/lib/cookie-token";
 
 export const dynamic = "force-dynamic";
@@ -62,14 +63,16 @@ export async function POST(request: Request) {
     // Suggestions
     const suggestions = suggestLinkedIdentities(developer, personalRepos);
 
-    return NextResponse.json({
-      developer,
-      repositories: personalRepos,
-      organizations,
-      externalContributions,
-      suggestions,
-      readme,
-    });
+    return NextResponse.json(
+      formatUserResponse(
+        developer,
+        personalRepos,
+        organizations,
+        externalContributions,
+        suggestions,
+        readme,
+      ),
+    );
   } catch (error: unknown) {
     console.error("User API failed", error);
     if (
