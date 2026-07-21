@@ -32,11 +32,6 @@ export const metadata: Metadata = {
     "security evaluation",
     "npm dependency assessment",
   ],
-  icons: {
-    icon: "/ossintel.png",
-    shortcut: "/ossintel.png",
-    apple: "/ossintel.png",
-  },
   openGraph: {
     type: "website",
     siteName: "OSSIntel",
