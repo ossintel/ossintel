@@ -1,6 +1,6 @@
 # Domain Model
 
-The domain model represents the core language shared across all packages.
+The domain model represents the shared language across all OSSIntel packages.
 
 ## Developer
 
@@ -12,15 +12,15 @@ Represents a source code repository.
 
 ## Organization
 
-Represents a GitHub organization.
+Represents an organization that owns repositories and packages.
 
 ## Package
 
-Represents a published package (npm initially).
+Represents a published software package (npm initially; later NuGet, PyPI, crates.io, Go, etc.).
 
 ## Contribution
 
-Represents commits, pull requests, issues, and reviews.
+Represents commits, pull requests, issues, reviews, and other upstream contributions.
 
 ## Release
 
@@ -28,7 +28,7 @@ Represents a published software release.
 
 ## Metric
 
-A measurable value derived from normalized data.
+A measurable value derived from normalized provider data.
 
 Examples:
 
@@ -52,7 +52,7 @@ Examples:
 
 ## Finding
 
-A significant observation generated from metrics.
+A significant observation derived from metrics.
 
 ## Recommendation
 
@@ -64,20 +64,31 @@ A human-readable explanation combining findings, recommendations, and optional A
 
 ## OSS Identity
 
-A unified open source identity that aggregates multiple platforms (GitHub, npm, Stack Overflow) and profiles (Users, Organizations, Repositories) into a single representation.
+A unified open source identity that aggregates multiple providers into a single developer profile.
 
-An OSS Identity allows:
-- **Platform Aggregation**: Combining a maintainer's primary identity (GitHub) with linked ecosystem profiles (npm, Stack Overflow) to show a complete picture of reach and expertise.
-- **Organization Portfolio Selection**: Allowing maintainers to include or exclude specific organization memberships from contributing to their lifetime impact scores.
-- **Archived Asset Weighting**: Ensuring that historic, archived repositories contribute to lifetime impact (stars, forks, historical reach) but do not penalize current maintenance indicators (activity, responsiveness, release cadence).
+GitHub is the **primary identity**. Additional providers (npm, Stack Overflow, and future ecosystems) enrich the identity without replacing it.
+
+### Identity Principles
+
+- GitHub defines the **core OSS reputation**.
+- Additional providers contribute **capability-specific evidence**.
+- Linking additional providers can **only increase** reputation, confidence, achievements, and evidence—it must never reduce any score.
+- Providers are grouped by **capability**, not platform.
+
+### Capability Buckets
+
+- **Core OSS** (GitHub)
+- **Package Publishing** (npm, NuGet, PyPI, crates.io, Go, etc.)
+- **Knowledge Sharing** (Stack Overflow, Dev.to, Hashnode, etc.)
+- Additional capability buckets may be introduced without changing the scoring model.
 
 ## Identity Aggregation Rules
 
-Identity scores are calculated deterministically across their aggregated components:
-- **Lifetime Impact**: Star counts, forks, and npm downloads are aggregated across all associated repositories and packages (including archived ones) to measure historical reach and ecosystem popularity.
-- **Active Maintenance & Responsiveness**: Health, Activity, and Community scores are computed as averages over *active (non-archived)* repositories only, preventing abandoned projects from dragging down active maintenance scores.
-- **Ecosystem Risk**: Assesses risk averages across active portfolios while treating archived dependencies appropriately.
+- Lifetime impact aggregates historical reach across repositories and packages, including archived assets.
+- Active maintenance is calculated using active (non-archived) repositories only.
+- Archived repositories contribute to lifetime impact but not ongoing maintenance metrics.
+- Capability buckets are additive. If a developer has no data for a capability (for example, no published packages), that bucket contributes **0** rather than reducing existing scores.
 
 ## Guiding Principle
 
-Every package should operate on these domain concepts rather than platform-specific API responses.
+Every package should operate on these domain concepts rather than provider-specific API responses. The scoring model should be **transparent, deterministic, extensible, and monotonic**—adding verified data must never decrease a developer's OSS identity score.

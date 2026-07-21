@@ -48,7 +48,9 @@
     "typescript": "latest"
   },
   "forge": {
-    "aliases": [],
+    "aliases": [
+      "ossintel"
+    ],
     "icon": "LibraryBig",
     "description": ""
   },
