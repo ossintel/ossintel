@@ -1,5 +1,13 @@
 # @ossintel/scoring
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [[`900e223`](https://github.com/ossintel/ossintel/commit/900e2232109d5be0f7aceaf19b6b23879c7c6810), [`a4f49ed`](https://github.com/ossintel/ossintel/commit/a4f49ed150ffd4717048f15578fc5e2018d36f9f)]:
+  - @ossintel/github-normalizer@0.1.1
+  - @ossintel/npm@0.0.2
+
 ## 0.1.0
 
 ### Minor Changes

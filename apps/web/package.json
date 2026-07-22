@@ -1,6 +1,6 @@
 {
   "name": "@app/web",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "description": "OSSIntel platform - Beautiful open source intelligence dashboard to audit developers, portfolios, and repositories using deterministic models.",
   "keywords": [

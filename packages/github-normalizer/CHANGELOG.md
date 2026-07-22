@@ -1,5 +1,13 @@
 # @ossintel/github-normalizer
 
+## 0.1.1
+
+### Patch Changes
+
+- [`900e223`](https://github.com/ossintel/ossintel/commit/900e2232109d5be0f7aceaf19b6b23879c7c6810) Thanks [@mayank1513](https://github.com/mayank1513)! - Parallelize paginated search requests and repository metadata fetches to speed up external contributions loading.
+
+- [`a4f49ed`](https://github.com/ossintel/ossintel/commit/a4f49ed150ffd4717048f15578fc5e2018d36f9f) Thanks [@mayank1513](https://github.com/mayank1513)! - Introduce the `@ossintel/input-parser` package to isolate search query resolution across platforms. Refine the landing page search query parsing, add a syntax guide, support `/org/[orgname]` routing alongside `/user/[username]`, implement client-side URL healing redirects, move package details pages to root-level `/package/[registry]/[...packageName]`, fix the npm downloads API 405 error for scoped packages, add fetchPinnedRepositories GraphQL query support to @ossintel/github-normalizer, and redesign the organization portfolio into a multi-signal 8-stage visual Ecosystem Lifecycle Map.
+
 ## 0.1.0
 
 ### Minor Changes

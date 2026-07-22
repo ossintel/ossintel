@@ -2,7 +2,7 @@
   "name": "@ossintel/scoring",
   "author": "Mayank Kumar Chaudhari <https://mayankchaudhari.com>",
   "private": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mathematical, deterministic metrics calculator to evaluate open-source software health, impact, activity, community adoption, and risk profiles.",
   "license": "MIT",
   "main": "./dist/index.js",

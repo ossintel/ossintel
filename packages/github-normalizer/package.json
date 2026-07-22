@@ -2,7 +2,7 @@
   "name": "@ossintel/github-normalizer",
   "author": "Mayank Kumar Chaudhari <https://mayankchaudhari.com>",
   "private": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Robust, typed utilities to fetch, normalize, and sanitize raw GitHub REST and GraphQL API responses into consistent domain structures for open-source analytics.",
   "license": "MIT",
   "main": "./dist/index.js",
