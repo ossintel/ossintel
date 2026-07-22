@@ -8,15 +8,15 @@ import {
   CheckCircle,
   ChevronDown,
   GitPullRequest,
-  KeyRound,
   ShieldCheck,
+  Sparkles,
   Star,
   Users,
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { savePatCookie } from "@/lib/api-client";
 import { formatCompactNumber } from "@/lib/format";
+import { GithubIcon } from "../icons";
 
 interface OpenSourceImpactProps {
   contributions: NormalizedContribution[];
@@ -33,7 +33,6 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
   onRefresh,
   badges = [],
 }) => {
-  const [patInput, setPatInput] = useState("");
   const [hasToken, setHasToken] = useState(false);
   const [ecosystemExpanded, setEcosystemExpanded] = useState<boolean>(true);
   const [expandedYears, setExpandedYears] = useState<Record<number, boolean>>(
@@ -55,15 +54,6 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
         });
     }
   }, []);
-
-  const handleSavePat = async () => {
-    if (typeof window !== "undefined" && patInput.trim()) {
-      await savePatCookie(patInput.trim());
-      setHasToken(true);
-      setPatInput("");
-      onRefresh();
-    }
-  };
 
   // 1. Group statistics
   const totalPRs = contributions.length;
@@ -261,33 +251,23 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
 
       {/* Warning Card for rate limits */}
       {limit > 10 && !hasToken && (
-        <div className="p-5 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="p-5 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
           <div className="space-y-1">
             <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-              <KeyRound className="h-4 w-4" /> Personal Access Token Recommended
+              <Sparkles className="h-4 w-4" /> GitHub Connection Recommended
             </h4>
-            <p className="text-sm text-slate-200 leading-relaxed max-w-xl">
+            <p className="text-sm text-slate-205 leading-relaxed max-w-xl">
               Analyzing more than 10 external projects can exhaust GitHub public
-              API rate limits. Provide a GitHub PAT to ensure successful
+              API rate limits. Connect your GitHub account to ensure successful
               execution.
             </p>
           </div>
-          <div className="flex gap-2 w-full md:w-auto shrink-0">
-            <input
-              type="password"
-              placeholder="ghp_..."
-              value={patInput}
-              onChange={(e) => setPatInput(e.target.value)}
-              className="flex-1 md:w-48 bg-slate-950 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-amber-500/40"
-            />
-            <button
-              type="button"
-              onClick={handleSavePat}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all"
-            >
-              Apply PAT
-            </button>
-          </div>
+          <a
+            href="/api/auth/github"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all whitespace-nowrap shadow-md text-center"
+          >
+            <GithubIcon className="h-3.5 w-3.5 shrink-0" /> Connect GitHub
+          </a>
         </div>
       )}
 

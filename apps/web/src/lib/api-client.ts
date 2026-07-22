@@ -36,31 +36,6 @@ export async function fetchWithCache<T>(
   return data;
 }
 
-export async function saveSecureToken(
-  token: string,
-  type: "github" | "stackoverflow",
-): Promise<void> {
-  if (typeof window !== "undefined") {
-    if (token) {
-      await fetch("/api/auth/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ token, type }),
-      });
-    } else {
-      await fetch(`/api/auth/token?type=${type}`, {
-        method: "DELETE",
-        credentials: "same-origin",
-      });
-    }
-  }
-}
-
-export async function savePatCookie(token: string): Promise<void> {
-  await saveSecureToken(token, "github");
-}
-
 export async function clearCacheItem(cacheKey: string) {
   await deleteCacheItem(cacheKey);
 }

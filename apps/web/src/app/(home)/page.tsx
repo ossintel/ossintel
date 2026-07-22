@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   ArrowRight,
   Binary,
-  KeyRound,
   Search,
   Sparkles,
   Workflow,
@@ -14,13 +13,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { savePatCookie } from "@/lib/api-client";
+import { GithubIcon } from "@/components/icons";
 
 export default function HomePage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [token, setToken] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasGithubPat, setHasGithubPat] = useState(false);
 
@@ -35,6 +32,14 @@ export default function HomePage() {
         .catch(() => {
           setHasGithubPat(false);
         });
+
+      const params = new URLSearchParams(window.location.search);
+      const authError = params.get("auth_error");
+      if (authError) {
+        setError(decodeURIComponent(authError));
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }
     }
   }, []);
 
@@ -44,12 +49,6 @@ export default function HomePage() {
     setError(null);
 
     const performAnalyze = async () => {
-      if (token) {
-        await savePatCookie(token);
-        setHasGithubPat(true);
-        setToken("");
-      }
-
       try {
         const detection = detectInput(query);
         const externalBase = process.env.NEXT_PUBLIC_EXTERNAL_DASHBOARD_URL;
@@ -93,12 +92,6 @@ export default function HomePage() {
   };
 
   const handleQuickSearch = async (q: string, searchType: "repo" | "user") => {
-    if (token) {
-      await savePatCookie(token);
-      setHasGithubPat(true);
-      setToken("");
-    }
-
     const externalBase = process.env.NEXT_PUBLIC_EXTERNAL_DASHBOARD_URL;
     let targetPath = "";
     if (searchType === "repo") {
@@ -158,83 +151,58 @@ export default function HomePage() {
             </div>
 
             <div className="flex gap-2 justify-center">
-              <div className="group relative flex items-center">
-                <button
-                  type="button"
-                  onClick={() => setShowSettings(!showSettings)}
-                  className={`p-3 border rounded-xl transition-all ${
-                    showSettings || token
-                      ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
-                      : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
-                  }`}
-                  aria-label="GitHub Personal Access Token Settings"
-                >
-                  <KeyRound className="h-5 w-5" />
-                </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 bg-slate-900 border border-slate-800 text-slate-350 text-[10px] rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-50 text-center font-medium leading-normal">
-                  <p className="font-bold text-slate-100 mb-0.5">
-                    GitHub Access Token (PAT)
-                  </p>
-                  <p className="text-slate-450">
-                    Click to configure a Personal Access Token to avoid GitHub
-                    API rate limits.
-                  </p>
-                </div>
-              </div>
               <button
                 type="submit"
-                className="px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                className="px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all flex items-center justify-center gap-2 whitespace-nowrap animate-fade-in"
               >
                 Analyze <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </form>
 
-          {/* Token Settings */}
-          {showSettings && (
-            <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-left max-w-xl mx-auto w-full space-y-2 animate-fade-in-up">
-              <label
-                htmlFor="github-pat-input"
-                className="text-xs font-bold text-slate-400 uppercase tracking-wider block"
-              >
-                GitHub Personal Access Token (PAT)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="github-pat-input"
-                  type="password"
-                  placeholder={
-                    hasGithubPat
-                      ? "•••••••••••••••• (Configured)"
-                      : "Enter GitHub PAT..."
-                  }
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  className="bg-slate-950 border border-slate-800 outline-none rounded-lg p-2.5 flex-1 text-slate-200 text-xs font-mono animate-fade-in"
-                />
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (token) {
-                      await savePatCookie(token);
-                      setHasGithubPat(true);
-                      setToken("");
-                    } else {
-                      await savePatCookie("");
-                      setHasGithubPat(false);
-                    }
-                    setShowSettings(false);
-                  }}
-                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all shrink-0 hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  Save & Apply
-                </button>
+          {/* GitHub Connection Banner */}
+          {hasGithubPat ? (
+            <div className="p-4 bg-emerald-950/10 border border-emerald-500/20 rounded-2xl max-w-xl mx-auto w-full flex items-center justify-between gap-4 mt-2 animate-fade-in-up text-left">
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />{" "}
+                  Connected to GitHub
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-normal">
+                  Ecosystem queries are running with an elevated limit of 5,000
+                  requests/hour.
+                </p>
               </div>
-              <p className="text-[10px] text-slate-500 leading-normal">
-                Avoid rate limit exhaustion on busy public IP networks. The
-                token is sent to a secure HttpOnly cookie and is used only for
-                audit calculations.
-              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  setHasGithubPat(false);
+                }}
+                className="px-3 py-1.5 bg-rose-950/40 hover:bg-rose-950/60 border border-rose-900/30 text-rose-300 rounded-xl text-xs font-bold transition-all shrink-0"
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : (
+            <div className="p-4 bg-indigo-950/20 border border-indigo-500/20 rounded-2xl max-w-xl mx-auto w-full flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 animate-fade-in-up text-left">
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-indigo-400" /> Enhance
+                  API Limits
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-normal">
+                  Connect your GitHub account to increase API rate limits to
+                  5,000 requests/hour. We only request basic public profile
+                  access.
+                </p>
+              </div>
+              <a
+                href="/api/auth/github"
+                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all whitespace-nowrap shadow-md"
+              >
+                <GithubIcon className="h-3.5 w-3.5 shrink-0" /> Connect GitHub
+              </a>
             </div>
           )}
 

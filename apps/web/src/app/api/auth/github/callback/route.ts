@@ -5,6 +5,7 @@ import { encrypt } from "@/lib/crypto-helper";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
@@ -14,23 +15,23 @@ export async function GET(request: Request) {
   cookieStore.delete("oauth_state");
 
   if (!code) {
-    return NextResponse.json(
-      { error: "Missing authorization code" },
-      { status: 400 },
+    return NextResponse.redirect(
+      `${appUrl}/?auth_error=${encodeURIComponent("Missing authorization code")}`,
     );
   }
 
   if (!state || state !== savedState) {
-    return NextResponse.json({ error: "Invalid state" }, { status: 400 });
+    return NextResponse.redirect(
+      `${appUrl}/?auth_error=${encodeURIComponent("Invalid state")}`,
+    );
   }
 
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return NextResponse.json(
-      { error: "GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET not configured" },
-      { status: 500 },
+    return NextResponse.redirect(
+      `${appUrl}/?auth_error=${encodeURIComponent("GITHUB_CLIENT_ID or GITHUB_CLIENT_SECRET not configured")}`,
     );
   }
 
@@ -59,9 +60,8 @@ export async function GET(request: Request) {
     const accessToken = data.access_token;
 
     if (!accessToken) {
-      return NextResponse.json(
-        { error: "No access token returned from GitHub" },
-        { status: 400 },
+      return NextResponse.redirect(
+        `${appUrl}/?auth_error=${encodeURIComponent("No access token returned from GitHub")}`,
       );
     }
 
@@ -75,13 +75,11 @@ export async function GET(request: Request) {
     });
 
     // Redirect back to main page
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     return NextResponse.redirect(`${appUrl}/`);
   } catch (err) {
     console.error("GitHub OAuth callback failed", err);
-    return NextResponse.json(
-      { error: "Authentication failed" },
-      { status: 500 },
+    return NextResponse.redirect(
+      `${appUrl}/?auth_error=${encodeURIComponent("Authentication failed")}`,
     );
   }
 }

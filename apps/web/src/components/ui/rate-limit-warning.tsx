@@ -3,11 +3,8 @@
 import { AlertTriangle, X } from "lucide-react";
 import type * as React from "react";
 import { useEffect, useState } from "react";
-import { FaKey as KeyIcon } from "react-icons/fa";
-import { savePatCookie } from "@/lib/api-client";
 import { parseRateLimitError } from "@/lib/utils";
-import { Button } from "./button";
-import { Input } from "./input";
+import { GithubIcon } from "../icons";
 
 interface RateLimitWarningProps {
   error: unknown;
@@ -20,24 +17,7 @@ export const RateLimitWarning: React.FC<RateLimitWarningProps> = ({
   onRetry,
   onDismiss,
 }) => {
-  const [hasGithubPat, setHasGithubPat] = useState(false);
-  const [patInput, setPatInput] = useState("");
-  const [showPatConfig, setShowPatConfig] = useState(true);
   const [cooldown, setCooldown] = useState("");
-
-  // Check token status on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      fetch("/api/auth/status", { credentials: "same-origin" })
-        .then((r) => r.json())
-        .then((data) => {
-          setHasGithubPat(!!data.hasGithubPat);
-        })
-        .catch(() => {
-          setHasGithubPat(false);
-        });
-    }
-  }, []);
 
   // Cooldown countdown timer
   useEffect(() => {
@@ -69,14 +49,6 @@ export const RateLimitWarning: React.FC<RateLimitWarningProps> = ({
     return () => clearInterval(interval);
   }, [error, onRetry]);
 
-  const handleSavePat = async () => {
-    if (patInput) {
-      await savePatCookie(patInput);
-      setPatInput("");
-    }
-    onRetry();
-  };
-
   return (
     <div className="relative pointer-events-auto p-6 bg-slate-900/95 border border-rose-500/30 rounded-2xl shadow-2xl flex flex-col gap-4 text-left">
       <div className="flex gap-4 items-start text-rose-200">
@@ -95,44 +67,20 @@ export const RateLimitWarning: React.FC<RateLimitWarningProps> = ({
         </div>
       </div>
 
-      {/* PAT retry interface */}
+      {/* OAuth Sign In Action */}
       <div className="border-t border-slate-800/80 pt-4 mt-1 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-            <KeyIcon className="text-indigo-400 h-3.5 w-3.5" /> Have a token?
-          </span>
-          <button
-            type="button"
-            onClick={() => setShowPatConfig(!showPatConfig)}
-            className="text-xs font-bold text-indigo-400 hover:text-indigo-300 underline"
-          >
-            {showPatConfig ? "Cancel" : "Add Git PAT"}
-          </button>
-        </div>
-        {showPatConfig && (
-          <div className="flex gap-2">
-            <Input
-              type="password"
-              placeholder={
-                hasGithubPat
-                  ? "•••••••••••••••• (Configured)"
-                  : "Enter GitHub PAT..."
-              }
-              value={patInput}
-              onChange={(e) => setPatInput(e.target.value)}
-              className="flex-1 text-xs h-9 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl"
-            />
-            <Button
-              type="button"
-              onClick={handleSavePat}
-              size="sm"
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all"
-            >
-              Save & Retry
-            </Button>
-          </div>
-        )}
+        <p className="text-xs text-slate-400">
+          Connect your GitHub account to immediately increase your limit to
+          5,000 requests/hour.
+        </p>
+        <a
+          href="/api/auth/github"
+          className="flex items-center justify-center gap-2 w-full p-2.5 bg-indigo-650 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md text-center"
+        >
+          <GithubIcon className="h-4 w-4 shrink-0" /> Connect GitHub Account
+        </a>
       </div>
+
       {onDismiss && (
         <button
           type="button"
