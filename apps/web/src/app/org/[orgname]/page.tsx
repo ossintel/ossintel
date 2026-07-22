@@ -5,13 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { AINarrator } from "@/components/dashboard/ai-narrator";
 import { DimensionBreakdown } from "@/components/dashboard/dimension-breakdown";
-import { EcosystemGraph } from "@/components/dashboard/ecosystem-graph";
 import { FindingsList } from "@/components/dashboard/findings-list";
 import { OverviewCard } from "@/components/dashboard/overview-card";
-import { ProfileCard } from "@/components/dashboard/profile-card";
 import { RecommendationsGrid } from "@/components/dashboard/recommendations-grid";
-import { RepositoriesTable } from "@/components/dashboard/repositories-table";
-import { SkillRadar } from "@/components/dashboard/skill-radar";
+import { MaintainerNetwork } from "@/components/org/maintainer-network";
+import { OrgHealthDashboard } from "@/components/org/org-health";
+import { PackageEcosystem } from "@/components/org/package-ecosystem";
+import { RepositoryPortfolio } from "@/components/org/repo-portfolio";
+import { SupplyChain } from "@/components/org/supply-chain";
+import { TechLandscape } from "@/components/org/tech-landscape";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { useDeveloperScores } from "@/hooks/use-developer-scores";
@@ -102,6 +104,26 @@ function OrgDashboardContent() {
   const isFetchingCombined = userQuery.isFetching;
   const errorCombined = userQuery.error;
 
+  const enrichedRepos = useMemo(() => {
+    const rawRepos = userQuery.data?.repositories || [];
+    const scoredRepos = clientIntel.repositories || [];
+    const rawMap = new Map(rawRepos.map((r) => [r.fullName, r]));
+    return scoredRepos.map((sr) => {
+      const raw = rawMap.get(sr.fullName);
+      return {
+        ...sr,
+        isArchived: raw?.isArchived ?? false,
+        isFork: raw?.isFork ?? false,
+        createdAt: raw?.createdAt ?? "",
+        pushedAt: raw?.pushedAt ?? "",
+        language: raw?.language ?? null,
+        topics: raw?.topics ?? [],
+        description: raw?.description ?? null,
+        openIssuesCount: raw?.openIssuesCount ?? 0,
+      };
+    });
+  }, [userQuery.data?.repositories, clientIntel.repositories]);
+
   const fullAnalysisData = useMemo(() => {
     if (!userQuery.data) return null;
     return {
@@ -179,49 +201,27 @@ function OrgDashboardContent() {
                   impactStats={impactStats}
                 />
                 <DimensionBreakdown scores={clientIntel.scores} />
+                <OrgHealthDashboard
+                  repositories={enrichedRepos}
+                  orgScore={clientIntel.scores.overall}
+                />
               </div>
 
               {/* Right Column */}
               <div className="lg:col-span-2 flex flex-col gap-8">
-                <ProfileCard
-                  avatarUrl={userQuery.data?.metadata?.avatarUrl || ""}
-                  name={userQuery.data?.metadata?.name || ""}
-                  login={userQuery.data?.metadata?.login || ""}
-                  bio={userQuery.data?.metadata?.bio}
-                  company={userQuery.data?.metadata?.company}
-                  location={userQuery.data?.metadata?.location}
-                  email={userQuery.data?.metadata?.email}
-                  htmlUrl={userQuery.data?.metadata?.htmlUrl || ""}
-                  twitterUsername={userQuery.data?.metadata?.twitterUsername}
-                  blog={userQuery.data?.metadata?.blog}
-                  readme={userQuery.data?.metadata?.readme}
-                  type="org"
+                <TechLandscape repositories={enrichedRepos} />
+                <RepositoryPortfolio repositories={enrichedRepos} />
+                <MaintainerNetwork repositories={enrichedRepos} />
+                <PackageEcosystem
+                  repositories={enrichedRepos}
+                  login={orgname}
                 />
-
-                {clientIntel.scores.skills &&
-                  clientIntel.scores.skills.length > 0 && (
-                    <SkillRadar skills={clientIntel.scores.skills} />
-                  )}
-
-                {clientIntel.scores.skills &&
-                  clientIntel.scores.skills.length > 0 && (
-                    <EcosystemGraph skills={clientIntel.scores.skills} />
-                  )}
-
+                <SupplyChain repositories={enrichedRepos} />
                 <AINarrator promptContext={clientIntel.promptContext} />
-
                 <FindingsList findings={clientIntel.findings} />
-
                 <RecommendationsGrid
                   recommendations={clientIntel.recommendations}
                 />
-
-                {clientIntel.repositories && (
-                  <RepositoriesTable
-                    repositories={clientIntel.repositories}
-                    username={userQuery.data?.metadata?.login || orgname}
-                  />
-                )}
               </div>
             </div>
           </div>
