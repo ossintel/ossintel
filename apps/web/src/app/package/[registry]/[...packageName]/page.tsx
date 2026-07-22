@@ -26,8 +26,8 @@ export default function PackagePage() {
   const params = useParams();
   const router = useRouter();
   const registry = params.registry as string;
-  const packageNameParts = params.packageName as string[];
-  const packageName = packageNameParts ? packageNameParts.join("/") : "";
+  const packageNameParts = (params.packageName as string[]) ?? [];
+  const packageName = packageNameParts.join("/").replace("%40", "@");
 
   // If not npm, show placeholder coming soon
   if (registry !== "npm") {
