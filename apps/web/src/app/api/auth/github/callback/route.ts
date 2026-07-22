@@ -5,7 +5,10 @@ import { encrypt } from "@/lib/crypto-helper";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const host = process.env.VERCEL_URL || "localhost:3000";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  const appUrl = `${protocol}://${host}`;
+
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
@@ -26,8 +29,14 @@ export async function GET(request: Request) {
     );
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+  const isJsOrg = host.includes(".js.org");
+  const clientId = isJsOrg
+    ? process.env.GITHUB_JS_ORG_CLIENT_ID || process.env.GITHUB_CLIENT_ID
+    : process.env.GITHUB_CLIENT_ID;
+  const clientSecret = isJsOrg
+    ? process.env.GITHUB_CLIENT_JS_ORG_SECRET ||
+      process.env.GITHUB_CLIENT_SECRET
+    : process.env.GITHUB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(

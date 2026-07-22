@@ -5,12 +5,20 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const host = process.env.VERCEL_URL || "localhost:3000";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  const appUrl = `${protocol}://${host}`;
+
+  const isJsOrg = host.includes(".js.org");
+  const clientId = isJsOrg
+    ? process.env.GITHUB_JS_ORG_CLIENT_ID || process.env.GITHUB_CLIENT_ID
+    : process.env.GITHUB_CLIENT_ID;
 
   if (!clientId) {
     return NextResponse.json(
-      { error: "GITHUB_CLIENT_ID is not configured" },
+      {
+        error: "GITHUB_CLIENT_ID or GITHUB_JS_ORG_CLIENT_ID is not configured",
+      },
       { status: 500 },
     );
   }
