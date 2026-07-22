@@ -1,4 +1,7 @@
-import { GitHubRateLimitError } from "@ossintel/github-normalizer";
+import {
+  fetchPinnedRepositories,
+  GitHubRateLimitError,
+} from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
 import { getFriendlyErrorMessage } from "@/lib/api-helpers";
 import { getDecryptedToken } from "@/lib/cookie-token";
@@ -52,6 +55,11 @@ export async function POST(request: Request) {
           options,
           forceRefresh,
         );
+        const pinnedRepositories = await fetchPinnedRepositories(
+          login,
+          true,
+          options,
+        );
         const mappedUser = {
           type: "org" as const,
           metadata: {
@@ -76,6 +84,7 @@ export async function POST(request: Request) {
           repositories: orgData.repositories || [],
           externalContributions: [],
           cachedAt: orgData.cachedAt,
+          pinnedRepositories,
         };
         return NextResponse.json(mappedUser);
       } catch (orgErr) {
@@ -109,3 +118,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+// fetchPinnedRepositories is imported from @ossintel/github-normalizer

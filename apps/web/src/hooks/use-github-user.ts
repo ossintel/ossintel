@@ -19,6 +19,7 @@ export interface UserResponse {
   repositories: NormalizedRepository[];
   externalContributions: NormalizedContribution[];
   cachedAt?: number;
+  pinnedRepositories?: string[];
 }
 
 export const useGithubUser = (username: string, limit = 10) => {

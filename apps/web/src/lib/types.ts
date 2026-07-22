@@ -95,4 +95,5 @@ export interface AnalysisData {
     stars: number;
     forks: number;
   }>;
+  pinnedRepositories?: string[];
 }
