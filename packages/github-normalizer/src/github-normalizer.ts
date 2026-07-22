@@ -270,6 +270,52 @@ export async function fetchOrganization(
   return normalizeOrganization(raw);
 }
 
+export async function fetchPinnedRepositories(
+  login: string,
+  isOrg: boolean,
+  options?: GitHubFetchOptions,
+): Promise<string[]> {
+  const query = `
+    query {
+      ${isOrg ? `organization(login: "${login}")` : `user(login: "${login}")`} {
+        pinnedItems(first: 6, types: REPOSITORY) {
+          nodes {
+            ... on Repository {
+              name
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const token =
+    options?.token ??
+    process.env["GITHUB_TOKEN"] ??
+    process.env["GITHUB_PAT"] ??
+    "";
+
+  try {
+    const res = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "User-Agent": "OSSIntel",
+      },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const nodes = isOrg
+      ? data?.data?.organization?.pinnedItems?.nodes
+      : data?.data?.user?.pinnedItems?.nodes;
+    return (nodes || []).map((node: { name: string }) => node.name);
+  } catch {
+    return [];
+  }
+}
+
 export function suggestLinkedIdentities(
   developer: NormalizedDeveloper,
   _repositories: NormalizedRepository[],
