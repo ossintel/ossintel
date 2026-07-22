@@ -113,17 +113,34 @@ export function getFriendlyErrorMessage(
     statusCode?: number;
     message?: string;
     name?: string;
+    code?: string;
   };
 
   const status = err.status || err.statusCode;
   const name = err.name || "";
+  const code = err.code || "";
+  const messageStr = err.message || "";
 
+  // Check for rate limit
   if (
     name === "GitHubRateLimitError" ||
-    err.message?.includes("rate_limit") ||
-    err.message?.includes("Rate Limit Exceeded")
+    messageStr.includes("rate_limit") ||
+    messageStr.includes("Rate Limit Exceeded")
   ) {
     return "GitHub API Rate Limit Exceeded. Please try again later or add a Personal Access Token.";
+  }
+
+  // Check for offline / network connection errors
+  if (
+    messageStr.includes("fetch failed") ||
+    messageStr.includes("ENOTFOUND") ||
+    messageStr.includes("EAI_AGAIN") ||
+    messageStr.includes("ECONNRESET") ||
+    messageStr.includes("ECONNREFUSED") ||
+    code === "ENOTFOUND" ||
+    code === "EAI_AGAIN"
+  ) {
+    return "Network connection error. Please check your internet connection and try again.";
   }
 
   if (status === 404) {
@@ -144,8 +161,8 @@ export function getFriendlyErrorMessage(
     return "GitHub APIs are currently experiencing issues. Please try again in a few moments.";
   }
 
-  if (err.message && !err.message.includes("status code")) {
-    return err.message;
+  if (messageStr?.includes("status code")) {
+    return messageStr;
   }
 
   return defaultMessage;
