@@ -229,16 +229,6 @@ export interface NormalizedRelease {
   } | null;
 }
 
-export interface InputDetectionResult {
-  platform: "github" | "npm" | "stackoverflow" | "unknown";
-  type: "user" | "org" | "repo" | "package" | "unknown";
-  owner?: string;
-  repo?: string;
-  name?: string;
-  profileId?: string;
-  rawInput: string;
-}
-
 export interface LinkedIdentitySuggestions {
   stackoverflow?: {
     profileId: string;
