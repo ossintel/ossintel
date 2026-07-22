@@ -2,6 +2,7 @@
 
 import {
   AlertTriangle,
+  Database,
   ExternalLink,
   KeyRound,
   RefreshCw,
@@ -31,6 +32,7 @@ import { useGithubUser } from "@/hooks/use-github-user";
 import { useNpmUser } from "@/hooks/use-npm-user";
 import { useStackOverflowUser } from "@/hooks/use-stackoverflow-user";
 import { saveSecureToken } from "@/lib/api-client";
+import { clearCache, getCacheSettings, saveCacheSettings } from "@/lib/cache";
 
 const STEPS = [
   "Establishing connection to GitHub APIs...",
@@ -138,6 +140,10 @@ function UserDashboardContent() {
   const [hasGithubPat, setHasGithubPat] = useState(false);
   const [hasSoApiKey, setHasSoApiKey] = useState(false);
 
+  // Client cache settings state
+  const [quotaInput, setQuotaInput] = useState(100);
+  const [staleInput, setStaleInput] = useState(7);
+
   const isInitialLoad = useRef(true);
 
   // Load tokens and linked identities from storage on mount
@@ -154,7 +160,16 @@ function UserDashboardContent() {
           setHasSoApiKey(false);
         });
 
-      // Load linked identities
+      // Load cache settings
+      const settings = getCacheSettings();
+      setQuotaInput(settings.quotaMb);
+      setStaleInput(settings.staleDays);
+    }
+  }, []);
+
+  // Load linked identities
+  useEffect(() => {
+    if (typeof window !== "undefined") {
       let initialNpm = entryPlatform === "npm" ? username : "";
       let initialSO =
         entryPlatform === "stackoverflow" ? entryId || username : "";
@@ -509,6 +524,88 @@ function UserDashboardContent() {
                           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all shrink-0"
                         >
                           Save
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Local Cache Management */}
+                    <div className="border-t border-slate-800 pt-4 mt-2">
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <Database className="h-4 w-4 text-indigo-400" />
+                        <h5 className="text-xs font-bold text-slate-300">
+                          Local Cache Management
+                        </h5>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <label
+                            htmlFor="cache-quota-input"
+                            className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1"
+                          >
+                            Storage Quota (MB)
+                          </label>
+                          <input
+                            id="cache-quota-input"
+                            type="number"
+                            min="10"
+                            max="2000"
+                            value={quotaInput}
+                            onChange={(e) =>
+                              setQuotaInput(Number(e.target.value))
+                            }
+                            className="w-full bg-slate-950 border border-slate-800 outline-none rounded-lg p-2 text-slate-200 text-xs font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="cache-stale-input"
+                            className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1"
+                          >
+                            Stale Time (Days)
+                          </label>
+                          <input
+                            id="cache-stale-input"
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={staleInput}
+                            onChange={(e) =>
+                              setStaleInput(Number(e.target.value))
+                            }
+                            className="w-full bg-slate-950 border border-slate-800 outline-none rounded-lg p-2 text-slate-200 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            saveCacheSettings({
+                              quotaMb: quotaInput,
+                              staleDays: staleInput,
+                            });
+                            alert("Cache settings saved successfully.");
+                          }}
+                          className="flex-1 px-3 py-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-all"
+                        >
+                          Save Cache Config
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (
+                              confirm(
+                                "Are you sure you want to clear all locally cached developer profiles?",
+                              )
+                            ) {
+                              await clearCache();
+                              alert("Local cache cleared.");
+                              handleRefresh();
+                            }
+                          }}
+                          className="px-3 py-2 bg-rose-950/40 hover:bg-rose-950/60 border border-rose-900/30 text-rose-300 rounded-lg text-xs font-bold transition-all shrink-0"
+                        >
+                          Clear Cache
                         </button>
                       </div>
                     </div>

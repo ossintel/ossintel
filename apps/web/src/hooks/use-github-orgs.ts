@@ -15,7 +15,8 @@ import { generateInsights } from "@ossintel/insights";
 import type { RepositoryScores } from "@ossintel/scoring";
 import { calculateRepositoryScore } from "@ossintel/scoring";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { clearCacheItem, fetchWithCache } from "@/lib/api-client";
+import { useState } from "react";
+import { fetchWithCache } from "@/lib/api-client";
 
 export interface OrgResponse {
   type: "org";
@@ -32,6 +33,7 @@ export interface OrgResponse {
     description: string | null;
   };
   repositories: NormalizedRepository[];
+  cachedAt?: number;
 }
 
 export interface RepoResponse {
@@ -46,23 +48,31 @@ export interface RepoResponse {
 }
 
 export const useGithubOrg = (orgName: string) => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const query = useQuery({
     queryKey: ["org", orgName?.toLowerCase()],
-    queryFn: () =>
-      fetchWithCache<OrgResponse>(
-        `org:${orgName.toLowerCase()}`,
-        "/api/github/org",
-        {
-          query: orgName,
-        },
-      ),
+    queryFn: async () => {
+      try {
+        const data = await fetchWithCache<OrgResponse>(
+          `org:${orgName.toLowerCase()}`,
+          "/api/github/org",
+          {
+            query: orgName,
+          },
+          isRefreshing,
+        );
+        return data;
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
     enabled: !!orgName,
     retry: false,
   });
 
   const refresh = async () => {
-    const cacheKey = `org:${orgName.toLowerCase()}`;
-    await clearCacheItem(cacheKey);
+    setIsRefreshing(true);
     await query.refetch();
   };
 
@@ -70,30 +80,33 @@ export const useGithubOrg = (orgName: string) => {
 };
 
 export const useGithubOrgs = (orgNames: string[]) => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const queries = useQueries({
     queries: orgNames.map((orgName) => ({
       queryKey: ["org", orgName.toLowerCase()],
-      queryFn: () =>
-        fetchWithCache<OrgResponse>(
-          `org:${orgName.toLowerCase()}`,
-          "/api/github/org",
-          {
-            query: orgName,
-          },
-        ),
+      queryFn: async () => {
+        try {
+          const data = await fetchWithCache<OrgResponse>(
+            `org:${orgName.toLowerCase()}`,
+            "/api/github/org",
+            {
+              query: orgName,
+            },
+            isRefreshing,
+          );
+          return data;
+        } finally {
+          setIsRefreshing(false);
+        }
+      },
       enabled: !!orgName,
       retry: false,
     })),
   });
 
   const refreshAll = async () => {
-    const refetchPromises = orgNames.map(async (orgName) => {
-      const cacheKey = `org:${orgName.toLowerCase()}`;
-      await clearCacheItem(cacheKey);
-    });
-    await Promise.all(refetchPromises);
-
-    // Invalidate/refetch all queries
+    setIsRefreshing(true);
     const queriesRefetch = queries.map((q) => q.refetch());
     await Promise.all(queriesRefetch);
   };
@@ -112,45 +125,53 @@ export interface RepoRawResponse {
   contributors: NormalizedContributor[];
   releases: NormalizedRelease[];
   languages: NormalizedLanguage[];
+  cachedAt?: number;
 }
 
 export const useGithubRepo = (owner: string, repo: string) => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const query = useQuery({
     queryKey: ["repo", owner?.toLowerCase(), repo?.toLowerCase()],
     queryFn: async () => {
-      const raw = await fetchWithCache<RepoRawResponse>(
-        `repo:${owner.toLowerCase()}:${repo.toLowerCase()}`,
-        "/api/github/repo",
-        { owner, repo },
-      );
-      const scores = calculateRepositoryScore({ repository: raw.repository });
-      const insightsResult = generateInsights(
-        {
-          repository: raw.repository,
-          releases: raw.releases,
-          contributors: raw.contributors,
+      try {
+        const raw = await fetchWithCache<RepoRawResponse>(
+          `repo:${owner.toLowerCase()}:${repo.toLowerCase()}`,
+          "/api/github/repo",
+          { owner, repo },
+          isRefreshing,
+        );
+        const scores = calculateRepositoryScore({ repository: raw.repository });
+        const insightsResult = generateInsights(
+          {
+            repository: raw.repository,
+            releases: raw.releases,
+            contributors: raw.contributors,
+            languages: raw.languages,
+          },
+          scores,
+        );
+        return {
+          type: "repo" as const,
+          metadata: raw.repository,
+          scores,
+          findings: insightsResult.findings,
+          recommendations: insightsResult.recommendations,
+          promptContext: insightsResult.promptContext,
           languages: raw.languages,
-        },
-        scores,
-      );
-      return {
-        type: "repo" as const,
-        metadata: raw.repository,
-        scores,
-        findings: insightsResult.findings,
-        recommendations: insightsResult.recommendations,
-        promptContext: insightsResult.promptContext,
-        languages: raw.languages,
-        contributorsCount: raw.contributors.length,
-      };
+          contributorsCount: raw.contributors.length,
+          cachedAt: raw.cachedAt,
+        };
+      } finally {
+        setIsRefreshing(false);
+      }
     },
     enabled: !!owner && !!repo,
     retry: false,
   });
 
   const refresh = async () => {
-    const cacheKey = `repo:${owner.toLowerCase()}:${repo.toLowerCase()}`;
-    await clearCacheItem(cacheKey);
+    setIsRefreshing(true);
     await query.refetch();
   };
 

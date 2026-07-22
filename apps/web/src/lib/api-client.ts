@@ -4,16 +4,18 @@ export async function fetchWithCache<T>(
   cacheKey: string,
   endpoint: string,
   payload: Record<string, unknown>,
-  ttlSeconds = 60,
+  forceRefresh = false,
 ): Promise<T> {
-  const cached = await getCacheItem<T>(cacheKey);
-  if (cached) return cached;
+  if (!forceRefresh) {
+    const cached = await getCacheItem<T>(cacheKey);
+    if (cached) return cached;
+  }
 
   const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "same-origin",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, forceRefresh }),
   });
   const data = await res.json();
   if (!res.ok) {
@@ -30,7 +32,7 @@ export async function fetchWithCache<T>(
     }
     throw errorObj;
   }
-  await setCacheItem(cacheKey, data, ttlSeconds);
+  await setCacheItem(cacheKey, data);
   return data;
 }
 

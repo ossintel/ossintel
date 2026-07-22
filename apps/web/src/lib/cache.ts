@@ -4,18 +4,55 @@ export interface CacheEntry<T> {
   key: string;
   data: T;
   timestamp: number;
-  expiresAt: number;
+  lastAccessed: number;
+  size: number;
+  version: number;
+  expiresAt: number; // Kept for compatibility
+}
+
+export interface CacheSettings {
+  quotaMb: number; // default: 100 MB
+  staleDays: number; // default: 7 days
 }
 
 const DB_NAME = "ossintel-db";
 const STORE_NAME = "cache";
-/**
- * Migrations:
- * Version 1: Initial schema with "analyses" store.
- * Version 2: Added multiple tables ("users", "repositories", "organizations").
- * Version 3: Consolidated back to a single "cache" store with namespaced keys for simplicity and scalability.
- */
 const DB_VERSION = 3;
+
+const DEFAULT_SETTINGS: CacheSettings = {
+  quotaMb: 100,
+  staleDays: 7,
+};
+
+export const getCacheSettings = (): CacheSettings => {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  try {
+    const quota = localStorage.getItem("ossintel:settings:cache-quota");
+    const stale = localStorage.getItem("ossintel:settings:stale-time");
+    return {
+      quotaMb: quota ? parseInt(quota, 10) : 100,
+      staleDays: stale ? parseInt(stale, 10) : 7,
+    };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+};
+
+export const saveCacheSettings = (settings: CacheSettings): void => {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      "ossintel:settings:cache-quota",
+      settings.quotaMb.toString(),
+    );
+    localStorage.setItem(
+      "ossintel:settings:stale-time",
+      settings.staleDays.toString(),
+    );
+  } catch (e) {
+    console.warn("Failed to save cache settings", e);
+  }
+};
 
 let dbPromise: Promise<IDBPDatabase<unknown>> | undefined;
 
@@ -36,7 +73,7 @@ const getDB = (): Promise<IDBPDatabase<unknown>> => {
 };
 
 let writeCounter = 0;
-const CLEANUP_THRESHOLD = 15; // Clean up expired entries every 15 writes
+const CLEANUP_THRESHOLD = 15;
 
 const cleanExpiredEntriesOpportunistically = (): void => {
   writeCounter++;
@@ -48,15 +85,55 @@ const cleanExpiredEntriesOpportunistically = (): void => {
   }
 };
 
+const estimateSize = (val: unknown): number => {
+  try {
+    return JSON.stringify(val).length * 2; // UTF-16 characters are 2 bytes each
+  } catch {
+    return 0;
+  }
+};
+
+const evictToQuota = async (
+  db: IDBPDatabase<unknown>,
+  limitBytes: number,
+): Promise<void> => {
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  const store = tx.objectStore(STORE_NAME);
+  const entries = (await store.getAll()) as CacheEntry<unknown>[];
+
+  let totalSize = entries.reduce((acc, entry) => acc + (entry.size || 0), 0);
+  if (totalSize <= limitBytes) return;
+
+  // Sort by lastAccessed ascending (oldest first)
+  entries.sort((a, b) => a.lastAccessed - b.lastAccessed);
+
+  for (const entry of entries) {
+    if (totalSize <= limitBytes) break;
+    await store.delete(entry.key);
+    totalSize -= entry.size || 0;
+  }
+  await tx.done;
+};
+
 export const getCacheItem = async <T>(key: string): Promise<T | null> => {
   try {
     const db = await getDB();
     const result = (await db.get(STORE_NAME, key)) as CacheEntry<T> | undefined;
     if (!result) return null;
-    if (Date.now() > result.expiresAt) {
+
+    const settings = getCacheSettings();
+    if (
+      Date.now() - result.timestamp >
+      settings.staleDays * 24 * 60 * 60 * 1000
+    ) {
       await db.delete(STORE_NAME, key);
       return null;
     }
+
+    // Update lastAccessed for LRU
+    result.lastAccessed = Date.now();
+    await db.put(STORE_NAME, result);
+
     return result.data;
   } catch (e) {
     console.warn("IndexedDB cache get error for key:", key, e);
@@ -79,19 +156,25 @@ export const getCacheTimestamp = async (
   }
 };
 
-export const setCacheItem = async <T>(
-  key: string,
-  data: T,
-  ttlMinutes = 60,
-): Promise<void> => {
+export const setCacheItem = async <T>(key: string, data: T): Promise<void> => {
   try {
     const db = await getDB();
     const now = Date.now();
-    const expiresAt = now + ttlMinutes * 60 * 1000;
+    const settings = getCacheSettings();
+    const size = estimateSize(data);
+
+    // Evict items if adding this new item exceeds limit
+    const quotaBytes = settings.quotaMb * 1024 * 1024;
+    await evictToQuota(db, quotaBytes - size);
+
+    const expiresAt = now + settings.staleDays * 24 * 60 * 60 * 1000;
     const entry: CacheEntry<T> = {
       key,
       data,
       timestamp: now,
+      lastAccessed: now,
+      size,
+      version: DB_VERSION,
       expiresAt,
     };
     await db.put(STORE_NAME, entry);
@@ -117,19 +200,30 @@ export const getMany = async <T>(
 ): Promise<Record<string, T>> => {
   try {
     const db = await getDB();
-    const tx = db.transaction(STORE_NAME, "readonly");
+    const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
     const results: Record<string, T> = {};
     const now = Date.now();
+    const settings = getCacheSettings();
 
     await Promise.all(
       keys.map(async (key) => {
         const entry = (await store.get(key)) as CacheEntry<T> | undefined;
-        if (entry && now <= entry.expiresAt) {
-          results[key] = entry.data;
+        if (entry) {
+          if (
+            now - entry.timestamp >
+            settings.staleDays * 24 * 60 * 60 * 1000
+          ) {
+            await store.delete(key);
+          } else {
+            results[key] = entry.data;
+            entry.lastAccessed = now;
+            await store.put(entry);
+          }
         }
       }),
     );
+    await tx.done;
     return results;
   } catch (e) {
     console.warn("IndexedDB batch get failed", e);
@@ -139,20 +233,32 @@ export const getMany = async <T>(
 
 export const putMany = async (
   entries: { key: string; data: unknown }[],
-  ttlMinutes = 60,
 ): Promise<void> => {
   try {
     const db = await getDB();
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
     const now = Date.now();
-    const expiresAt = now + ttlMinutes * 60 * 1000;
+    const settings = getCacheSettings();
+    const expiresAt = now + settings.staleDays * 24 * 60 * 60 * 1000;
+
+    let incomingSize = 0;
+    for (const { data } of entries) {
+      incomingSize += estimateSize(data);
+    }
+
+    const quotaBytes = settings.quotaMb * 1024 * 1024;
+    await evictToQuota(db, quotaBytes - incomingSize);
 
     for (const { key, data } of entries) {
+      const size = estimateSize(data);
       const entry: CacheEntry<unknown> = {
         key,
         data,
         timestamp: now,
+        lastAccessed: now,
+        size,
+        version: DB_VERSION,
         expiresAt,
       };
       await store.put(entry);
@@ -196,11 +302,12 @@ export const cleanExpiredEntries = async (): Promise<void> => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
     const now = Date.now();
+    const settings = getCacheSettings();
 
     let cursor = await store.openCursor();
     while (cursor) {
       const entry = cursor.value as CacheEntry<unknown>;
-      if (now > entry.expiresAt) {
+      if (now - entry.timestamp > settings.staleDays * 24 * 60 * 60 * 1000) {
         await cursor.delete();
       }
       cursor = await cursor.continue();
