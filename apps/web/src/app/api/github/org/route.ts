@@ -4,7 +4,7 @@ import {
   GitHubRateLimitError,
 } from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
-import { formatOrgResponse } from "@/lib/api-helpers";
+import { formatOrgResponse, getFriendlyErrorMessage } from "@/lib/api-helpers";
 import { getDecryptedToken } from "@/lib/cookie-token";
 
 export const dynamic = "force-dynamic";
@@ -49,8 +49,10 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
-    const message =
-      error instanceof Error ? error.message : "Failed to fetch organization";
+    const message = getFriendlyErrorMessage(
+      error,
+      "Failed to fetch organization",
+    );
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

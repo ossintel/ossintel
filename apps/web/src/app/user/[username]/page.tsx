@@ -24,7 +24,6 @@ import { SkillRadar } from "@/components/dashboard/skill-radar";
 import { GithubIcon } from "@/components/icons";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import { RateLimitWarning } from "@/components/ui/rate-limit-warning";
 import { SuggestionToast } from "@/components/ui/suggestion-toast";
 import { useDeveloperScores } from "@/hooks/use-developer-scores";
 import { useGithubOrgs } from "@/hooks/use-github-orgs";
@@ -32,7 +31,6 @@ import { useGithubUser } from "@/hooks/use-github-user";
 import { useNpmUser } from "@/hooks/use-npm-user";
 import { useStackOverflowUser } from "@/hooks/use-stackoverflow-user";
 import { saveSecureToken } from "@/lib/api-client";
-import { parseRateLimitError } from "@/lib/utils";
 
 const STEPS = [
   "Establishing connection to GitHub APIs...",
@@ -739,27 +737,15 @@ function UserDashboardContent() {
 
         {/* Floating Toast Container */}
         <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4 max-w-sm w-full pointer-events-none">
-          {/* Toast 1: General Error */}
-          {errorCombined &&
-            !parseRateLimitError(errorCombined).isRateLimit &&
-            !dismissedError && (
-              <ErrorAlert
-                message={errorCombined.message}
-                onRetry={handleRefresh}
-                onDismiss={() => setDismissedError(true)}
-              />
-            )}
-
-          {/* Toast 2: Rate Limit */}
-          {errorCombined &&
-            parseRateLimitError(errorCombined).isRateLimit &&
-            !dismissedRateLimit && (
-              <RateLimitWarning
-                error={errorCombined}
-                onRetry={handleRefresh}
-                onDismiss={() => setDismissedRateLimit(true)}
-              />
-            )}
+          {/* Toast 1: Unified Error Alert */}
+          {errorCombined && !dismissedError && (
+            <ErrorAlert
+              error={errorCombined}
+              message={errorCombined.message}
+              onRetry={handleRefresh}
+              onDismiss={() => setDismissedError(true)}
+            />
+          )}
 
           {/* Toast 3: npm Suggestion */}
           {userQuery.data?.metadata?.suggestions?.npm &&

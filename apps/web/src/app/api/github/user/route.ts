@@ -8,7 +8,7 @@ import {
   suggestLinkedIdentities,
 } from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
-import { formatUserResponse } from "@/lib/api-helpers";
+import { formatUserResponse, getFriendlyErrorMessage } from "@/lib/api-helpers";
 import { getDecryptedToken } from "@/lib/cookie-token";
 
 export const dynamic = "force-dynamic";
@@ -97,8 +97,7 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
-    const message =
-      error instanceof Error ? error.message : "Failed to fetch user";
+    const message = getFriendlyErrorMessage(error, "Failed to fetch user");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

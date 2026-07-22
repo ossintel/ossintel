@@ -2,18 +2,29 @@
 
 import { AlertTriangle, X } from "lucide-react";
 import type * as React from "react";
+import { parseRateLimitError } from "@/lib/utils";
+import { RateLimitWarning } from "./rate-limit-warning";
 
 interface ErrorAlertProps {
+  error?: unknown;
   message: string;
   onRetry: () => void;
   onDismiss?: () => void;
 }
 
 export const ErrorAlert: React.FC<ErrorAlertProps> = ({
+  error,
   message,
   onRetry,
   onDismiss,
 }) => {
+  const { isRateLimit } = parseRateLimitError(error);
+
+  if (isRateLimit) {
+    return (
+      <RateLimitWarning error={error} onRetry={onRetry} onDismiss={onDismiss} />
+    );
+  }
   return (
     <div className="relative pointer-events-auto p-5 bg-rose-950/90 border border-rose-500/30 rounded-2xl flex gap-3.5 items-start text-rose-200 shadow-2xl animate-slide-in">
       <AlertTriangle className="h-6 w-6 text-rose-500 shrink-0" />

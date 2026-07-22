@@ -12,10 +12,8 @@ import { OverviewCard } from "@/components/dashboard/overview-card";
 import { RecommendationsGrid } from "@/components/dashboard/recommendations-grid";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
-import { RateLimitWarning } from "@/components/ui/rate-limit-warning";
 import { useGithubRepo } from "@/hooks/use-github-orgs";
 import { getCacheTimestamp } from "@/lib/cache";
-import { parseRateLimitError } from "@/lib/utils";
 
 const STEPS = [
   "Establishing connection to GitHub APIs...",
@@ -71,17 +69,14 @@ export default function RepoPage() {
           steps={STEPS}
         />
 
-        {/* Custom Rate Limit Error Box */}
-        {error && parseRateLimitError(error).isRateLimit && (
+        {/* Error alert box */}
+        {error && (
           <div className="max-w-xl mx-auto w-full">
-            <RateLimitWarning error={error} onRetry={refresh} />
-          </div>
-        )}
-
-        {/* General Error box */}
-        {error && !parseRateLimitError(error).isRateLimit && (
-          <div className="max-w-lg mx-auto w-full">
-            <ErrorAlert message={error.message} onRetry={() => refetch()} />
+            <ErrorAlert
+              error={error}
+              message={error.message}
+              onRetry={refresh}
+            />
           </div>
         )}
 

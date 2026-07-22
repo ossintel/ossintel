@@ -101,3 +101,52 @@ export function formatUserResponse(
     externalContributions,
   };
 }
+
+export function getFriendlyErrorMessage(
+  error: unknown,
+  defaultMessage: string,
+): string {
+  if (!error) return defaultMessage;
+
+  const err = error as {
+    status?: number;
+    statusCode?: number;
+    message?: string;
+    name?: string;
+  };
+
+  const status = err.status || err.statusCode;
+  const name = err.name || "";
+
+  if (
+    name === "GitHubRateLimitError" ||
+    err.message?.includes("rate_limit") ||
+    err.message?.includes("Rate Limit Exceeded")
+  ) {
+    return "GitHub API Rate Limit Exceeded. Please try again later or add a Personal Access Token.";
+  }
+
+  if (status === 404) {
+    if (defaultMessage.toLowerCase().includes("repository")) {
+      return "GitHub repository not found. Please verify the owner and repository names.";
+    }
+    if (defaultMessage.toLowerCase().includes("organization")) {
+      return "GitHub organization not found. Please verify the organization name.";
+    }
+    return "GitHub profile not found. Please verify the username.";
+  }
+
+  if (status === 401 || status === 403) {
+    return "Access denied by GitHub APIs. Please verify your configured Personal Access Token.";
+  }
+
+  if (status && status >= 500) {
+    return "GitHub APIs are currently experiencing issues. Please try again in a few moments.";
+  }
+
+  if (err.message && !err.message.includes("status code")) {
+    return err.message;
+  }
+
+  return defaultMessage;
+}
