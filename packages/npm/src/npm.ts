@@ -111,7 +111,7 @@ export async function fetchNpmPackage(
   let monthlyDownloads = 0;
   try {
     const weeklyRes = await npmApiFetch<RawNpmPackageDownloads>(
-      `/downloads/point/last-week/${escapedName}`,
+      `/downloads/point/last-week/${packageName}`,
     );
     weeklyDownloads = weeklyRes.downloads ?? 0;
   } catch {
@@ -120,7 +120,7 @@ export async function fetchNpmPackage(
 
   try {
     const monthlyRes = await npmApiFetch<RawNpmPackageDownloads>(
-      `/downloads/point/last-month/${escapedName}`,
+      `/downloads/point/last-month/${packageName}`,
     );
     monthlyDownloads = monthlyRes.downloads ?? 0;
   } catch {
