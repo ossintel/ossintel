@@ -46,17 +46,17 @@ Unlike GitHub, which primarily shows activity, OSSIntel helps answer questions s
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
+| Layer    | Technology                  |
+| -------- | --------------------------- |
 | Monorepo | pnpm workspaces + Turborepo |
-| Language | TypeScript (strict) |
-| Web | Next.js 15 (App Router) |
-| Styling | Tailwind CSS v4 + shadcn/ui |
-| Testing | Vitest |
-| Docs | Fumadocs + Typedoc |
-| Linting | Biome |
-| Release | Changesets |
-| CI | GitHub Actions |
+| Language | TypeScript (strict)         |
+| Web      | Next.js 15 (App Router)     |
+| Styling  | Tailwind CSS v4 + shadcn/ui |
+| Testing  | Vitest                      |
+| Docs     | Fumadocs + Typedoc          |
+| Linting  | Biome                       |
+| Release  | Changesets                  |
+| CI       | GitHub Actions              |
 
 ## Packages
 
@@ -137,3 +137,5 @@ The development workflow includes:
 - GitHub App
 - CLI
 - VS Code Extension
+
+<p align="center" style="text-align:center">with 💖 by <a href="https://mayank-chaudhari.vercel.app" target="_blank">Mayank Kumar Chaudhari</a></p>

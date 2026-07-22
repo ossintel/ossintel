@@ -451,31 +451,39 @@ export async function fetchExternalContributions(
   options?: GitHubFetchOptions,
 ): Promise<NormalizedContribution[]> {
   try {
-    const items: RawGitHubSearchIssue[] = [];
-    let page = 1;
-    let hasNextPage = true;
+    const firstPageRes = await githubFetch<{
+      total_count?: number;
+      items?: RawGitHubSearchIssue[];
+    }>(
+      `/search/issues?q=type:pr+author:${username}+-user:${username}+is:merged&per_page=100&page=1`,
+      options,
+    );
 
-    while (hasNextPage) {
-      const searchRes = await githubFetch<{ items: RawGitHubSearchIssue[] }>(
-        `/search/issues?q=type:pr+author:${username}+-user:${username}+is:merged&per_page=100&page=${page}`,
-        options,
-      );
+    const items: RawGitHubSearchIssue[] = firstPageRes.items || [];
+    const totalCount = firstPageRes.total_count ?? 0;
+    const totalPages = Math.min(10, Math.ceil(totalCount / 100));
 
-      const pageItems = searchRes.items || [];
-      if (pageItems.length === 0) {
-        hasNextPage = false;
-      } else {
-        items.push(...pageItems);
-        if (pageItems.length < 100) {
-          hasNextPage = false;
-        } else {
-          page++;
-        }
+    if (totalPages > 1) {
+      const pagePromises = [];
+      for (let p = 2; p <= totalPages; p++) {
+        pagePromises.push(
+          githubFetch<{ items?: RawGitHubSearchIssue[] }>(
+            `/search/issues?q=type:pr+author:${username}+-user:${username}+is:merged&per_page=100&page=${p}`,
+            options,
+          ).catch((err) => {
+            console.error(
+              `Failed to fetch page ${p} of external contributions`,
+              err,
+            );
+            return { items: [] };
+          }),
+        );
       }
-
-      // Safeguard page limit
-      if (page > 10) {
-        hasNextPage = false;
+      const results = await Promise.all(pagePromises);
+      for (const res of results) {
+        if (res.items) {
+          items.push(...res.items);
+        }
       }
     }
 
@@ -489,18 +497,23 @@ export async function fetchExternalContributions(
       ),
     ).slice(0, limit);
 
-    for (const repoFullName of uniqueRepos) {
-      try {
-        const rawRepo = await githubFetch<RawGitHubRepository>(
-          `/repos/${repoFullName}`,
-          options,
-        );
-        repoStarsMap.set(repoFullName, rawRepo.stargazers_count ?? 0);
-      } catch (err) {
-        console.error(`Failed to fetch repo metadata for ${repoFullName}`, err);
-        repoStarsMap.set(repoFullName, 0);
-      }
-    }
+    await Promise.all(
+      uniqueRepos.map(async (repoFullName) => {
+        try {
+          const rawRepo = await githubFetch<RawGitHubRepository>(
+            `/repos/${repoFullName}`,
+            options,
+          );
+          repoStarsMap.set(repoFullName, rawRepo.stargazers_count ?? 0);
+        } catch (err) {
+          console.error(
+            `Failed to fetch repo metadata for ${repoFullName}`,
+            err,
+          );
+          repoStarsMap.set(repoFullName, 0);
+        }
+      }),
+    );
 
     const contributions: NormalizedContribution[] = [];
 
