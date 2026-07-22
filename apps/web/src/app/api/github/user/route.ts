@@ -2,25 +2,38 @@ import { GitHubRateLimitError } from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
 import { getFriendlyErrorMessage } from "@/lib/api-helpers";
 import { getDecryptedToken } from "@/lib/cookie-token";
-import { getCachedDeveloperData } from "@/lib/server-cache";
+import {
+  getCachedDeveloperData,
+  getCachedOrganizationData,
+} from "@/lib/server-cache";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  let query = "";
+  let reqToken = "";
+  let limit = Infinity;
+  let forceRefresh = false;
+
   try {
-    const {
-      query,
-      token: reqToken,
-      limit,
-      forceRefresh,
-    } = await request.json();
-    const token = await getDecryptedToken(reqToken);
-    const options = { token };
+    const body = await request.json();
+    query = body.query || "";
+    reqToken = body.token || "";
+    limit =
+      body.limit === null || body.limit === undefined
+        ? Infinity
+        : Number(body.limit);
+    forceRefresh = body.forceRefresh || false;
+  } catch {
+    // Ignore body parsing error
+  }
 
-    const login = query || "";
-    const contribLimit =
-      limit === null || limit === undefined ? Infinity : Number(limit);
+  const token = await getDecryptedToken(reqToken);
+  const options = { token };
+  const login = query || "";
+  const contribLimit = limit;
 
+  try {
     const result = await getCachedDeveloperData(
       login,
       contribLimit,
@@ -30,6 +43,46 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error: unknown) {
     console.error("User API failed", error);
+    const errMessage = error instanceof Error ? error.message : String(error);
+
+    if (errMessage.includes("is an Organization")) {
+      try {
+        const orgData = await getCachedOrganizationData(
+          login,
+          options,
+          forceRefresh,
+        );
+        const mappedUser = {
+          type: "org" as const,
+          metadata: {
+            login: orgData.metadata.login,
+            name: orgData.metadata.name || orgData.metadata.login,
+            avatarUrl: orgData.metadata.avatarUrl,
+            htmlUrl: orgData.metadata.htmlUrl,
+            location: orgData.metadata.location,
+            email: orgData.metadata.email,
+            blog: orgData.metadata.blog,
+            publicRepos: orgData.metadata.publicRepos,
+            followers: orgData.metadata.followers,
+            bio: orgData.metadata.description || "",
+            company: null,
+            twitterUsername: null,
+            createdAt: "",
+            socialLinks: [],
+            organizations: [],
+            suggestions: { github: [], stackoverflow: [], npm: [] },
+            readme: "",
+          },
+          repositories: orgData.repositories || [],
+          externalContributions: [],
+          cachedAt: orgData.cachedAt,
+        };
+        return NextResponse.json(mappedUser);
+      } catch (orgErr) {
+        console.error("Organization fallback failed", orgErr);
+      }
+    }
+
     if (
       error instanceof GitHubRateLimitError ||
       (error &&

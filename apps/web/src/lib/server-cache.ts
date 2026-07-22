@@ -85,10 +85,17 @@ async function fetchDeveloperDataRaw(
   );
 }
 
-const getCachedDeveloperDataWrapped = (username: string, limit: number) => {
-  return unstable_cache(
+export async function getCachedDeveloperData(
+  username: string,
+  limit: number,
+  options: FetchOptions,
+  forceRefresh = false,
+) {
+  const cacheTag = `github:user:${username.toLowerCase()}`;
+
+  const wrapped = unstable_cache(
     async () => {
-      const data = await fetchDeveloperDataRaw(username, limit, {});
+      const data = await fetchDeveloperDataRaw(username, limit, options);
       return {
         data,
         fetchedAt: Date.now(),
@@ -98,18 +105,9 @@ const getCachedDeveloperDataWrapped = (username: string, limit: number) => {
     [`github-user-${username.toLowerCase()}-${limit}`],
     {
       revalidate: 365 * 24 * 60 * 60, // 365 days safety net
-      tags: [`github:user:${username.toLowerCase()}`],
+      tags: [cacheTag],
     },
-  )();
-};
-
-export async function getCachedDeveloperData(
-  username: string,
-  limit: number,
-  options: FetchOptions,
-  forceRefresh = false,
-) {
-  const cacheTag = `github:user:${username.toLowerCase()}`;
+  );
 
   if (forceRefresh) {
     // 1. Fetch fresh data first to verify it succeeds
@@ -117,12 +115,15 @@ export async function getCachedDeveloperData(
     // 2. If it succeeds, invalidate and write to cache
     revalidateTag(cacheTag, { expire: 0 });
     // Trigger write by executing the cached query
-    await getCachedDeveloperDataWrapped(username, limit);
-    return fresh;
+    await wrapped();
+    return {
+      ...fresh,
+      cachedAt: Date.now(),
+    };
   }
 
   // Read from cache
-  const cached = await getCachedDeveloperDataWrapped(username, limit);
+  const cached = await wrapped();
   const isStale = Date.now() - cached.fetchedAt > AUTO_UPDATE_THRESHOLD_MS;
 
   if (isStale) {
@@ -131,7 +132,7 @@ export async function getCachedDeveloperData(
       try {
         await fetchDeveloperDataRaw(username, limit, options);
         revalidateTag(cacheTag, { expire: 0 });
-        await getCachedDeveloperDataWrapped(username, limit);
+        await wrapped();
       } catch (err) {
         console.error(
           `Auto-update failed for user ${username}, serving stale cache`,
@@ -161,10 +162,16 @@ async function fetchOrganizationDataRaw(login: string, options: FetchOptions) {
   return formatOrgResponse(org, repositories);
 }
 
-const getCachedOrganizationDataWrapped = (login: string) => {
-  return unstable_cache(
+export async function getCachedOrganizationData(
+  login: string,
+  options: FetchOptions,
+  forceRefresh = false,
+) {
+  const cacheTag = `github:org:${login.toLowerCase()}`;
+
+  const wrapped = unstable_cache(
     async () => {
-      const data = await fetchOrganizationDataRaw(login, {});
+      const data = await fetchOrganizationDataRaw(login, options);
       return {
         data,
         fetchedAt: Date.now(),
@@ -174,26 +181,21 @@ const getCachedOrganizationDataWrapped = (login: string) => {
     [`github-org-${login.toLowerCase()}`],
     {
       revalidate: 365 * 24 * 60 * 60,
-      tags: [`github:org:${login.toLowerCase()}`],
+      tags: [cacheTag],
     },
-  )();
-};
-
-export async function getCachedOrganizationData(
-  login: string,
-  options: FetchOptions,
-  forceRefresh = false,
-) {
-  const cacheTag = `github:org:${login.toLowerCase()}`;
+  );
 
   if (forceRefresh) {
     const fresh = await fetchOrganizationDataRaw(login, options);
     revalidateTag(cacheTag, { expire: 0 });
-    await getCachedOrganizationDataWrapped(login);
-    return fresh;
+    await wrapped();
+    return {
+      ...fresh,
+      cachedAt: Date.now(),
+    };
   }
 
-  const cached = await getCachedOrganizationDataWrapped(login);
+  const cached = await wrapped();
   const isStale = Date.now() - cached.fetchedAt > AUTO_UPDATE_THRESHOLD_MS;
 
   if (isStale) {
@@ -201,7 +203,7 @@ export async function getCachedOrganizationData(
       try {
         await fetchOrganizationDataRaw(login, options);
         revalidateTag(cacheTag, { expire: 0 });
-        await getCachedOrganizationDataWrapped(login);
+        await wrapped();
       } catch (err) {
         console.error(
           `Auto-update failed for org ${login}, serving stale cache`,
@@ -257,25 +259,6 @@ async function fetchRepositoryDataRaw(
   };
 }
 
-const getCachedRepositoryDataWrapped = (owner: string, repo: string) => {
-  const key = `${owner.toLowerCase()}/${repo.toLowerCase()}`;
-  return unstable_cache(
-    async () => {
-      const data = await fetchRepositoryDataRaw(owner, repo, {});
-      return {
-        data,
-        fetchedAt: Date.now(),
-        version: BACKEND_CACHE_VERSION,
-      };
-    },
-    [`github-repo-${key}`],
-    {
-      revalidate: 365 * 24 * 60 * 60,
-      tags: [`github:repo:${key}`],
-    },
-  )();
-};
-
 export async function getCachedRepositoryData(
   owner: string,
   repo: string,
@@ -285,14 +268,33 @@ export async function getCachedRepositoryData(
   const key = `${owner.toLowerCase()}/${repo.toLowerCase()}`;
   const cacheTag = `github:repo:${key}`;
 
+  const wrapped = unstable_cache(
+    async () => {
+      const data = await fetchRepositoryDataRaw(owner, repo, options);
+      return {
+        data,
+        fetchedAt: Date.now(),
+        version: BACKEND_CACHE_VERSION,
+      };
+    },
+    [`github-repo-${key}`],
+    {
+      revalidate: 365 * 24 * 60 * 60,
+      tags: [cacheTag],
+    },
+  );
+
   if (forceRefresh) {
     const fresh = await fetchRepositoryDataRaw(owner, repo, options);
     revalidateTag(cacheTag, { expire: 0 });
-    await getCachedRepositoryDataWrapped(owner, repo);
-    return fresh;
+    await wrapped();
+    return {
+      ...fresh,
+      cachedAt: Date.now(),
+    };
   }
 
-  const cached = await getCachedRepositoryDataWrapped(owner, repo);
+  const cached = await wrapped();
   const isStale = Date.now() - cached.fetchedAt > AUTO_UPDATE_THRESHOLD_MS;
 
   if (isStale) {
@@ -300,7 +302,7 @@ export async function getCachedRepositoryData(
       try {
         await fetchRepositoryDataRaw(owner, repo, options);
         revalidateTag(cacheTag, { expire: 0 });
-        await getCachedRepositoryDataWrapped(owner, repo);
+        await wrapped();
       } catch (err) {
         console.error(
           `Auto-update failed for repo ${key}, serving stale cache`,

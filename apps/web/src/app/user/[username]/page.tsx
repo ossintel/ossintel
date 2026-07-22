@@ -4,8 +4,8 @@ import {
   AlertTriangle,
   Database,
   ExternalLink,
-  KeyRound,
   RefreshCw,
+  Settings,
   User,
 } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -31,7 +31,6 @@ import { useGithubOrgs } from "@/hooks/use-github-orgs";
 import { useGithubUser } from "@/hooks/use-github-user";
 import { useNpmUser } from "@/hooks/use-npm-user";
 import { useStackOverflowUser } from "@/hooks/use-stackoverflow-user";
-import { saveSecureToken } from "@/lib/api-client";
 import { clearCache, getCacheSettings, saveCacheSettings } from "@/lib/cache";
 
 const STEPS = [
@@ -134,11 +133,8 @@ function UserDashboardContent() {
     userQuery.error || orgsQuery.error || npmQuery.error || soQuery.error;
 
   // API Key configurations state
-  const [patInput, setPatInput] = useState("");
-  const [soApiKeyInput, setSoApiKeyInput] = useState("");
   const [showTokensConfig, setShowTokensConfig] = useState(false);
   const [hasGithubPat, setHasGithubPat] = useState(false);
-  const [hasSoApiKey, setHasSoApiKey] = useState(false);
 
   // Client cache settings state
   const [quotaInput, setQuotaInput] = useState(100);
@@ -153,11 +149,9 @@ function UserDashboardContent() {
         .then((r) => r.json())
         .then((data) => {
           setHasGithubPat(!!data.hasGithubPat);
-          setHasSoApiKey(!!data.hasStackOverflowKey);
         })
         .catch(() => {
           setHasGithubPat(false);
-          setHasSoApiKey(false);
         });
 
       // Load cache settings
@@ -411,8 +405,8 @@ function UserDashboardContent() {
                     onClick={() => setShowTokensConfig(!showTokensConfig)}
                     className="flex items-center gap-1.5 px-4 py-2 bg-slate-950 border border-slate-800 text-slate-350 hover:text-white text-xs font-bold rounded-xl transition-all"
                   >
-                    <KeyRound className="h-3.5 w-3.5 text-indigo-400" /> API
-                    Keys
+                    <Settings className="h-3.5 w-3.5 text-indigo-400" />{" "}
+                    Settings
                   </button>
 
                   <button
@@ -429,13 +423,13 @@ function UserDashboardContent() {
               {showTokensConfig && (
                 <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 max-w-xl mx-auto animate-fade-in-up">
                   <h4 className="text-sm font-bold text-slate-200">
-                    Ecosystem Tokens & Credentials
+                    Application Settings
                   </h4>
 
-                  <div className="space-y-3 text-left">
+                  <div className="space-y-4 text-left">
                     <div>
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                        GitHub Authentication (OAuth)
+                        GitHub Connection
                       </span>
                       {hasGithubPat ? (
                         <div className="flex items-center justify-between p-3 bg-slate-950 border border-slate-800 rounded-xl">
@@ -446,7 +440,9 @@ function UserDashboardContent() {
                           <button
                             type="button"
                             onClick={async () => {
-                              await saveSecureToken("", "github");
+                              await fetch("/api/auth/logout", {
+                                method: "POST",
+                              });
                               setHasGithubPat(false);
                               handleRefresh();
                             }}
@@ -460,116 +456,14 @@ function UserDashboardContent() {
                           href="/api/auth/github"
                           className="flex items-center justify-center gap-2 w-full p-3 bg-indigo-650 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md"
                         >
-                          <GithubIcon className="h-4 w-4" /> Sign in with GitHub
+                          <GithubIcon className="h-4 w-4" /> Connect GitHub
+                          Account
                         </a>
                       )}
                       <p className="text-[10px] text-slate-500 mt-1.5">
-                        Authorizing increases your GitHub API rate limit
-                        dynamically to 5,000 req/hr.
+                        Connecting your GitHub account automatically boosts your
+                        API rate limits from 60 to 5,000 requests/hour.
                       </p>
-                    </div>
-
-                    <div className="relative flex py-2 items-center">
-                      <div className="flex-grow border-t border-slate-800" />
-                      <span className="flex-shrink mx-3 text-[10px] text-slate-550 font-bold uppercase tracking-wider">
-                        or use manual PAT
-                      </span>
-                      <div className="flex-grow border-t border-slate-800" />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="github-token-input"
-                        className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1"
-                      >
-                        GitHub Personal Access Token (PAT)
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          id="github-token-input"
-                          type="password"
-                          placeholder={
-                            hasGithubPat
-                              ? "•••••••••••••••• (Configured)"
-                              : "Enter GitHub PAT..."
-                          }
-                          value={patInput}
-                          onChange={(e) => setPatInput(e.target.value)}
-                          className="bg-slate-950 border border-slate-800 outline-none rounded-lg p-2.5 flex-1 text-slate-200 text-xs font-mono"
-                        />
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (patInput) {
-                              await saveSecureToken(patInput, "github");
-                              setHasGithubPat(true);
-                              setPatInput("");
-                            } else {
-                              await saveSecureToken("", "github");
-                              setHasGithubPat(false);
-                            }
-                            setShowTokensConfig(false);
-                            handleRefresh();
-                          }}
-                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all shrink-0"
-                        >
-                          Save
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label
-                          htmlFor="stackoverflow-key-input"
-                          className="text-xs font-bold text-slate-400 uppercase tracking-wider block"
-                        >
-                          Stack Exchange API Key
-                        </label>
-                        <a
-                          href="https://stackapps.com/apps/oauth/register"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[10px] text-indigo-400 hover:underline flex items-center gap-0.5"
-                        >
-                          Get API Key <ExternalLink className="h-2.5 w-2.5" />
-                        </a>
-                      </div>
-                      <div className="flex gap-2">
-                        <input
-                          id="stackoverflow-key-input"
-                          type="password"
-                          placeholder={
-                            hasSoApiKey
-                              ? "•••••••••••••••• (Configured)"
-                              : "Enter Stack Overflow Key..."
-                          }
-                          value={soApiKeyInput}
-                          onChange={(e) => setSoApiKeyInput(e.target.value)}
-                          className="bg-slate-950 border border-slate-800 outline-none rounded-lg p-2.5 flex-1 text-slate-200 text-xs font-mono"
-                        />
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (soApiKeyInput) {
-                              await saveSecureToken(
-                                soApiKeyInput,
-                                "stackoverflow",
-                              );
-                              setHasSoApiKey(true);
-                              setSoApiKeyInput("");
-                            } else {
-                              await saveSecureToken("", "stackoverflow");
-                              setHasSoApiKey(false);
-                            }
-                            setShowTokensConfig(false);
-                            handleRefresh();
-                          }}
-                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all shrink-0"
-                        >
-                          Save
-                        </button>
-                      </div>
                     </div>
 
                     {/* Local Cache Management */}
@@ -678,129 +572,137 @@ function UserDashboardContent() {
                   />
                   <DimensionBreakdown scores={clientIntel.scores} />
 
-                  {/* Identity Resolution Links */}
-                  <div className="p-6 bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl space-y-4">
-                    <h4 className="text-sm font-bold text-slate-200">
-                      Linked OSS Identities
-                    </h4>
-                    <div className="space-y-3">
-                      {/* GitHub */}
-                      <div className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-850 rounded-xl">
-                        <div className="flex items-center gap-2">
-                          <GithubIcon className="h-4 w-4 text-slate-400" />
-                          <span className="text-xs font-semibold text-slate-200">
-                            GitHub
-                          </span>
-                        </div>
-                        <span className="text-xs font-bold text-slate-400 truncate max-w-[120px]">
-                          {githubUsername ? `@${githubUsername}` : "Not linked"}
-                        </span>
-                      </div>
-
-                      {/* npm */}
-                      <div className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-850 rounded-xl">
-                        <div className="flex items-center gap-2">
-                          <div className="h-4 w-4 bg-red-500/10 text-red-400 flex items-center justify-center rounded text-[10px] font-bold">
-                            N
-                          </div>
-                          <span className="text-xs font-semibold text-slate-200">
-                            npm
-                          </span>
-                        </div>
-                        {linkedNpm ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-slate-400 truncate max-w-[80px]">
-                              ~{linkedNpm}
+                  {userQuery.data?.type !== "org" && (
+                    <>
+                      {/* Identity Resolution Links */}
+                      <div className="p-6 bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl space-y-4">
+                        <h4 className="text-sm font-bold text-slate-200">
+                          Linked OSS Identities
+                        </h4>
+                        <div className="space-y-3">
+                          {/* GitHub */}
+                          <div className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-850 rounded-xl">
+                            <div className="flex items-center gap-2">
+                              <GithubIcon className="h-4 w-4 text-slate-400" />
+                              <span className="text-xs font-semibold text-slate-200">
+                                GitHub
+                              </span>
+                            </div>
+                            <span className="text-xs font-bold text-slate-400 truncate max-w-[120px]">
+                              {githubUsername
+                                ? `@${githubUsername}`
+                                : "Not linked"}
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => handleLinkNpm("")}
-                              className="text-[10px] text-red-500 hover:underline"
-                            >
-                              Unlink
-                            </button>
                           </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const val = prompt("Enter npm username:");
-                              if (val) handleLinkNpm(val);
-                            }}
-                            className="text-[10px] text-indigo-400 hover:underline font-bold"
-                          >
-                            Link Profile
-                          </button>
-                        )}
-                      </div>
 
-                      {/* Stack Overflow */}
-                      <div className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-850 rounded-xl">
-                        <div className="flex items-center gap-2">
-                          <div className="h-4 w-4 bg-orange-500/10 text-orange-400 flex items-center justify-center rounded text-[10px] font-bold">
-                            S
+                          {/* npm */}
+                          <div className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-850 rounded-xl">
+                            <div className="flex items-center gap-2">
+                              <div className="h-4 w-4 bg-red-500/10 text-red-400 flex items-center justify-center rounded text-[10px] font-bold">
+                                N
+                              </div>
+                              <span className="text-xs font-semibold text-slate-200">
+                                npm
+                              </span>
+                            </div>
+                            {linkedNpm ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-slate-400 truncate max-w-[80px]">
+                                  ~{linkedNpm}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleLinkNpm("")}
+                                  className="text-[10px] text-red-500 hover:underline"
+                                >
+                                  Unlink
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const val = prompt("Enter npm username:");
+                                  if (val) handleLinkNpm(val);
+                                }}
+                                className="text-[10px] text-indigo-400 hover:underline font-bold"
+                              >
+                                Link Profile
+                              </button>
+                            )}
                           </div>
-                          <span className="text-xs font-semibold text-slate-200">
-                            Stack Overflow
-                          </span>
+
+                          {/* Stack Overflow */}
+                          <div className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-850 rounded-xl">
+                            <div className="flex items-center gap-2">
+                              <div className="h-4 w-4 bg-orange-500/10 text-orange-400 flex items-center justify-center rounded text-[10px] font-bold">
+                                S
+                              </div>
+                              <span className="text-xs font-semibold text-slate-200">
+                                Stack Overflow
+                              </span>
+                            </div>
+                            {linkedSO ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-slate-400 truncate max-w-[80px]">
+                                  ID: {linkedSO}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleLinkSO("")}
+                                  className="text-[10px] text-red-500 hover:underline"
+                                >
+                                  Unlink
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const val = prompt(
+                                    "Enter Stack Overflow User ID:",
+                                  );
+                                  if (val) handleLinkSO(val);
+                                }}
+                                className="text-[10px] text-indigo-400 hover:underline font-bold"
+                              >
+                                Link Profile
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        {linkedSO ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-slate-400 truncate max-w-[80px]">
-                              ID: {linkedSO}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleLinkSO("")}
-                              className="text-[10px] text-red-500 hover:underline"
-                            >
-                              Unlink
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const val = prompt(
-                                "Enter Stack Overflow User ID:",
-                              );
-                              if (val) handleLinkSO(val);
-                            }}
-                            className="text-[10px] text-indigo-400 hover:underline font-bold"
-                          >
-                            Link Profile
-                          </button>
-                        )}
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Exclude User Repos Toggle */}
-                  <div className="p-6 bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl space-y-3">
-                    <h4 className="text-sm font-bold text-slate-200">
-                      Personal Repositories Filter
-                    </h4>
-                    <label className="flex items-center gap-3 p-3 bg-slate-950/50 border border-slate-800/80 rounded-xl cursor-pointer hover:border-slate-700 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={includeUserRepos}
-                        onChange={(e) => setIncludeUserRepos(e.target.checked)}
-                        className="rounded border-slate-800 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-slate-950 bg-slate-950 h-4 w-4"
+                      {/* Exclude User Repos Toggle */}
+                      <div className="p-6 bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl space-y-3">
+                        <h4 className="text-sm font-bold text-slate-200">
+                          Personal Repositories Filter
+                        </h4>
+                        <label className="flex items-center gap-3 p-3 bg-slate-950/50 border border-slate-800/80 rounded-xl cursor-pointer hover:border-slate-700 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={includeUserRepos}
+                            onChange={(e) =>
+                              setIncludeUserRepos(e.target.checked)
+                            }
+                            className="rounded border-slate-800 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-slate-950 bg-slate-950 h-4 w-4"
+                          />
+                          <span className="text-xs font-semibold text-slate-200">
+                            Include @{githubUsername} repositories
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Organization Selection checklist Component */}
+                      <OrgSelector
+                        organizations={
+                          userQuery.data?.metadata?.organizations || []
+                        }
+                        selectedOrgs={selectedOrgs}
+                        onChangeSelectedOrgs={setSelectedOrgs}
                       />
-                      <span className="text-xs font-semibold text-slate-200">
-                        Include @{githubUsername} repositories
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* Organization Selection checklist Component */}
-                  <OrgSelector
-                    organizations={
-                      userQuery.data?.metadata?.organizations || []
-                    }
-                    selectedOrgs={selectedOrgs}
-                    onChangeSelectedOrgs={setSelectedOrgs}
-                  />
+                    </>
+                  )}
                 </div>
 
                 {/* Right Column */}

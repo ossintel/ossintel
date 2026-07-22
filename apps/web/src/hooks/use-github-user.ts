@@ -10,7 +10,7 @@ import { useState } from "react";
 import { fetchWithCache } from "@/lib/api-client";
 
 export interface UserResponse {
-  type: "user";
+  type: "user" | "org";
   metadata: NormalizedDeveloper & {
     organizations: NormalizedOrganization[];
     suggestions: LinkedIdentitySuggestions;
