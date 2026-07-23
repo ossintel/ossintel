@@ -33,6 +33,41 @@ import type {
   RepositoryInsights,
 } from "./types";
 
+const formatPromptContext = (
+  summary: string,
+  scoresText: string,
+  metricsText: string,
+  findings: Finding[],
+  recommendations: Recommendation[],
+  includeScoreInFindings: boolean,
+): PromptContext => {
+  const findingsText = [
+    "### Findings",
+    ...findings.map((f) => {
+      const scorePart = includeScoreInFindings
+        ? ` (Score: ${f.score ?? "N/A"})`
+        : "";
+      return `- [${f.type.toUpperCase()}] (${f.category}): **${f.title}**${scorePart} - ${f.description}`;
+    }),
+  ].join("\n");
+
+  const recommendationsText = [
+    "### Recommendations",
+    ...recommendations.map(
+      (r) =>
+        `- [Priority: ${r.priority.toUpperCase()}] (${r.category}) **${r.title}**: ${r.description}`,
+    ),
+  ].join("\n");
+
+  return {
+    summary,
+    scoresText,
+    metricsText,
+    findingsText,
+    recommendationsText,
+  };
+};
+
 export const generateInsights = (
   inputs: ScoringInputs,
   scores: RepositoryScores,
@@ -235,29 +270,14 @@ export const generateInsights = (
     `- Updated At: ${repository.updatedAt}`,
   ].join("\n");
 
-  const findingsText = [
-    "### Findings",
-    ...findings.map(
-      (f) =>
-        `- [${f.type.toUpperCase()}] (${f.category}): **${f.title}** (Score: ${f.score ?? "N/A"}) - ${f.description}`,
-    ),
-  ].join("\n");
-
-  const recommendationsText = [
-    "### Recommendations",
-    ...recommendations.map(
-      (r) =>
-        `- [Priority: ${r.priority.toUpperCase()}] (${r.category}) **${r.title}**: ${r.description}`,
-    ),
-  ].join("\n");
-
-  const promptContext: PromptContext = {
+  const promptContext = formatPromptContext(
     summary,
     scoresText,
     metricsText,
-    findingsText,
-    recommendationsText,
-  };
+    findings,
+    recommendations,
+    true,
+  );
 
   return {
     findings,
@@ -502,29 +522,14 @@ export const generateIdentityInsights = (
 
   const metricsText = metricsArr.join("\n");
 
-  const findingsText = [
-    "### Findings",
-    ...findings.map(
-      (f) =>
-        `- [${f.type.toUpperCase()}] (${f.category}): **${f.title}** - ${f.description}`,
-    ),
-  ].join("\n");
-
-  const recommendationsText = [
-    "### Recommendations",
-    ...recommendations.map(
-      (r) =>
-        `- [Priority: ${r.priority.toUpperCase()}] (${r.category}) **${r.title}**: ${r.description}`,
-    ),
-  ].join("\n");
-
-  const promptContext: PromptContext = {
+  const promptContext = formatPromptContext(
     summary,
     scoresText,
     metricsText,
-    findingsText,
-    recommendationsText,
-  };
+    findings,
+    recommendations,
+    false,
+  );
 
   return {
     findings,
