@@ -8,6 +8,8 @@ import type {
 } from "@ossintel/github-normalizer";
 import type { RepositoryInsights } from "@ossintel/insights";
 import type { RepositoryScores } from "@ossintel/scoring";
+import { NextResponse } from "next/server";
+import { GITHUB_APP_CACHE_TTL } from "./constants-backend";
 
 export const formatRepoResponse = (
   repository: NormalizedRepository,
@@ -168,4 +170,37 @@ export const getFriendlyErrorMessage = (
   }
 
   return defaultMessage;
+};
+
+export const handleGithubRouteError = (
+  error: unknown,
+  defaultMessage: string,
+): NextResponse => {
+  const errObj = error as {
+    name?: string;
+    resetTime?: { toISOString: () => string };
+    message?: string;
+  };
+
+  const isRateLimit =
+    errObj?.name === "GitHubRateLimitError" ||
+    errObj?.message?.includes("rate_limit") ||
+    errObj?.message?.includes("Rate Limit Exceeded");
+
+  if (isRateLimit) {
+    const oneHourMs = GITHUB_APP_CACHE_TTL * 1000;
+    return NextResponse.json(
+      {
+        error: "rate_limit",
+        resetTime: errObj.resetTime
+          ? errObj.resetTime.toISOString()
+          : new Date(Date.now() + oneHourMs).toISOString(),
+        message: errObj.message || "GitHub API Rate Limit Exceeded",
+      },
+      { status: 403 },
+    );
+  }
+
+  const message = getFriendlyErrorMessage(error, defaultMessage);
+  return NextResponse.json({ error: message }, { status: 500 });
 };

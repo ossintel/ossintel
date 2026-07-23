@@ -35,6 +35,55 @@ interface RepositoriesTableProps {
 type SortField = "repoName" | "stars" | "forks" | "overall" | "risk";
 type SortOrder = "asc" | "desc";
 
+const SortIcon = ({ active, order }: { active: boolean; order: SortOrder }) => {
+  if (!active) {
+    return (
+      <ArrowUpDown className="h-3 w-3 text-muted-foreground/30 group-hover/btn:text-muted-foreground/60 transition-colors shrink-0" />
+    );
+  }
+  return order === "asc" ? (
+    <ChevronUp className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
+  ) : (
+    <ChevronDown className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
+  );
+};
+
+const RangeFilterDropdown = ({
+  label,
+  ranges,
+  selectedRanges,
+  onToggle,
+  alignClass = "right-0 md:left-3",
+}: {
+  label: string;
+  ranges: { key: string; label: string }[];
+  selectedRanges: string[];
+  onToggle: (key: string, checked: boolean) => void;
+  alignClass?: string;
+}) => (
+  <div
+    className={`absolute ${alignClass} top-10 z-20 bg-card border border-border shadow-sm rounded-xl p-3 w-52 text-left normal-case text-foreground font-medium space-y-2`}
+  >
+    <Label className="text-[10px] mb-1">{label}</Label>
+    <div className="space-y-1">
+      {ranges.map((range) => (
+        <label
+          key={range.key}
+          className="flex items-center gap-2 py-1 hover:bg-muted rounded px-1.5 cursor-pointer text-xs"
+        >
+          <input
+            type="checkbox"
+            checked={selectedRanges.includes(range.key)}
+            onChange={(e) => onToggle(range.key, e.target.checked)}
+            className="rounded border-border text-primary focus:ring-primary bg-muted"
+          />
+          <span>{range.label}</span>
+        </label>
+      ))}
+    </div>
+  </div>
+);
+
 export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
   repositories,
   username,
@@ -64,6 +113,19 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
   // Floating Dropdown menu states
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleRangeToggle = (
+    ranges: string[],
+    setRanges: React.Dispatch<React.SetStateAction<string[]>>,
+    key: string,
+    checked: boolean,
+  ) => {
+    if (checked) {
+      setRanges([...ranges, key]);
+    } else {
+      setRanges(ranges.filter((x) => x !== key));
+    }
+  };
 
   // Close dropdown if clicking outside
   useEffect(() => {
@@ -353,15 +415,7 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
                   className="inline-flex items-center gap-1.5 hover:text-foreground uppercase tracking-wider cursor-pointer font-bold select-none group/btn mx-auto"
                 >
                   <span>Stars</span>
-                  {sortField === "stars" ? (
-                    sortOrder === "asc" ? (
-                      <ChevronUp className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
-                    ) : (
-                      <ChevronDown className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="h-3 w-3 text-muted-foreground/30 group-hover/btn:text-muted-foreground/60 transition-colors shrink-0" />
-                  )}
+                  <SortIcon active={sortField === "stars"} order={sortOrder} />
                 </button>
               </th>
 
@@ -373,15 +427,7 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
                   className="inline-flex items-center gap-1.5 hover:text-foreground uppercase tracking-wider cursor-pointer font-bold select-none group/btn mx-auto"
                 >
                   <span>Forks</span>
-                  {sortField === "forks" ? (
-                    sortOrder === "asc" ? (
-                      <ChevronUp className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
-                    ) : (
-                      <ChevronDown className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="h-3 w-3 text-muted-foreground/30 group-hover/btn:text-muted-foreground/60 transition-colors shrink-0" />
-                  )}
+                  <SortIcon active={sortField === "forks"} order={sortOrder} />
                 </button>
               </th>
 
@@ -394,15 +440,10 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
                     className="inline-flex items-center gap-1.5 hover:text-foreground uppercase tracking-wider cursor-pointer font-bold select-none group/btn"
                   >
                     <span>Overall</span>
-                    {sortField === "overall" ? (
-                      sortOrder === "asc" ? (
-                        <ChevronUp className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
-                      ) : (
-                        <ChevronDown className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
-                      )
-                    ) : (
-                      <ArrowUpDown className="h-3 w-3 text-muted-foreground/30 group-hover/btn:text-muted-foreground/60 transition-colors shrink-0" />
-                    )}
+                    <SortIcon
+                      active={sortField === "overall"}
+                      order={sortOrder}
+                    />
                   </button>
                   <button
                     type="button"
@@ -417,44 +458,23 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
                   </button>
                 </div>
                 {activeDropdown === "overall" && (
-                  <div className="absolute right-0 md:left-3 top-10 z-20 bg-card border border-border shadow-sm rounded-xl p-3 w-52 text-left normal-case text-foreground font-medium space-y-2">
-                    <Label className="text-[10px] mb-1">
-                      Filter Overall score
-                    </Label>
-                    <div className="space-y-1">
-                      {[
-                        { key: "high", label: "Excellent (≥80)" },
-                        { key: "mid", label: "Moderate (40-79)" },
-                        { key: "low", label: "Poor (<40)" },
-                      ].map((range) => (
-                        <label
-                          key={range.key}
-                          className="flex items-center gap-2 py-1 hover:bg-muted rounded px-1.5 cursor-pointer text-xs"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedOverallRanges.includes(range.key)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedOverallRanges([
-                                  ...selectedOverallRanges,
-                                  range.key,
-                                ]);
-                              } else {
-                                setSelectedOverallRanges(
-                                  selectedOverallRanges.filter(
-                                    (x) => x !== range.key,
-                                  ),
-                                );
-                              }
-                            }}
-                            className="rounded border-border text-primary focus:ring-primary bg-muted"
-                          />
-                          <span>{range.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
+                  <RangeFilterDropdown
+                    label="Filter Overall score"
+                    ranges={[
+                      { key: "high", label: "Excellent (≥80)" },
+                      { key: "mid", label: "Moderate (40-79)" },
+                      { key: "low", label: "Poor (<40)" },
+                    ]}
+                    selectedRanges={selectedOverallRanges}
+                    onToggle={(key, checked) =>
+                      handleRangeToggle(
+                        selectedOverallRanges,
+                        setSelectedOverallRanges,
+                        key,
+                        checked,
+                      )
+                    }
+                  />
                 )}
               </th>
 
@@ -467,15 +487,7 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
                     className="inline-flex items-center gap-1.5 hover:text-foreground uppercase tracking-wider cursor-pointer font-bold select-none group/btn"
                   >
                     <span>Risk</span>
-                    {sortField === "risk" ? (
-                      sortOrder === "asc" ? (
-                        <ChevronUp className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
-                      ) : (
-                        <ChevronDown className="h-3.5 w-3.5 text-primary shrink-0 animate-fade-in" />
-                      )
-                    ) : (
-                      <ArrowUpDown className="h-3 w-3 text-muted-foreground/30 group-hover/btn:text-muted-foreground/60 transition-colors shrink-0" />
-                    )}
+                    <SortIcon active={sortField === "risk"} order={sortOrder} />
                   </button>
                   <button
                     type="button"
@@ -490,42 +502,24 @@ export const RepositoriesTable: React.FC<RepositoriesTableProps> = ({
                   </button>
                 </div>
                 {activeDropdown === "risk" && (
-                  <div className="absolute right-3 top-10 z-20 bg-card border border-border shadow-sm rounded-xl p-3 w-52 text-left normal-case text-foreground font-medium space-y-2">
-                    <Label className="text-[10px] mb-1">Filter Risk</Label>
-                    <div className="space-y-1">
-                      {[
-                        { key: "high", label: "High Risk (>50%)" },
-                        { key: "mid", label: "Medium Risk (20-50%)" },
-                        { key: "low", label: "Low Risk (<20%)" },
-                      ].map((range) => (
-                        <label
-                          key={range.key}
-                          className="flex items-center gap-2 py-1 hover:bg-muted rounded px-1.5 cursor-pointer text-xs"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedRiskRanges.includes(range.key)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedRiskRanges([
-                                  ...selectedRiskRanges,
-                                  range.key,
-                                ]);
-                              } else {
-                                setSelectedRiskRanges(
-                                  selectedRiskRanges.filter(
-                                    (x) => x !== range.key,
-                                  ),
-                                );
-                              }
-                            }}
-                            className="rounded border-border text-primary focus:ring-primary bg-muted"
-                          />
-                          <span>{range.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
+                  <RangeFilterDropdown
+                    label="Filter Risk"
+                    ranges={[
+                      { key: "high", label: "High Risk (>50%)" },
+                      { key: "mid", label: "Medium Risk (20-50%)" },
+                      { key: "low", label: "Low Risk (<20%)" },
+                    ]}
+                    selectedRanges={selectedRiskRanges}
+                    onToggle={(key, checked) =>
+                      handleRangeToggle(
+                        selectedRiskRanges,
+                        setSelectedRiskRanges,
+                        key,
+                        checked,
+                      )
+                    }
+                    alignClass="right-3"
+                  />
                 )}
               </th>
 

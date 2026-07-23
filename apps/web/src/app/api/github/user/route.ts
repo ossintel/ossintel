@@ -1,16 +1,8 @@
-import {
-  fetchPinnedRepositories,
-  GitHubRateLimitError,
-} from "@ossintel/github-normalizer";
+import { fetchPinnedRepositories } from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
-import { getFriendlyErrorMessage } from "@/lib/api-helpers";
-import { GITHUB_APP_CACHE_TTL } from "@/lib/constants-backend";
-import { getDecryptedToken } from "@/lib/cookie-token";
-import {
-  getInstallationId,
-  getInstallationMap,
-  getInstallationToken,
-} from "@/lib/github-app";
+import { handleGithubRouteError } from "@/lib/api-helpers";
+import { resolveInstallationAndUserToken } from "@/lib/cookie-token";
+import { getInstallationMap } from "@/lib/github-app";
 import {
   getCachedDeveloperData,
   getCachedOrganizationData,
@@ -40,25 +32,16 @@ export const POST = async (request: Request) => {
   const login = query || "";
   const contribLimit = limit;
 
-  // Resolve token: App installation token first, fall back to Cookie PAT
+  const { token, isAppInstalled } = await resolveInstallationAndUserToken(
+    login,
+    reqToken,
+    "User API",
+  );
+  const options = { token };
+
   const isAppConfigured = !!(
     process.env.GITHUB_APP_ID && process.env.GITHUB_APP_PRIVATE_KEY
   );
-  let token = await getInstallationToken(login);
-  const isAppInstalled = isAppConfigured
-    ? !!token || !!(await getInstallationId(login))
-    : true; // Suppress banner if app is not configured on this environment
-  if (token) {
-    console.log(
-      `[User API] Resolved GitHub App installation token for: ${login}`,
-    );
-  } else {
-    console.log(
-      `[User API] No GitHub App installation found for: ${login}. Falling back to Cookie PAT or anonymous.`,
-    );
-    token = await getDecryptedToken(reqToken);
-  }
-  const options = { token };
 
   try {
     const result = await getCachedDeveloperData(
@@ -69,12 +52,11 @@ export const POST = async (request: Request) => {
     );
     const uninstalledOrgs: string[] = [];
     if (result.type === "user" && isAppConfigured) {
-      const orgsList = result.metadata?.organizations || [];
       console.log(
-        `[User API DEBUG] Found ${orgsList.length} organizations in metadata.`,
+        `[User API DEBUG] Found ${result.metadata?.organizations?.length || 0} organizations in metadata.`,
       );
       const map = await getInstallationMap();
-      for (const org of orgsList) {
+      for (const org of result.metadata?.organizations || []) {
         console.log(
           `[User API DEBUG] Checking organization login: '${org.login}'`,
         );
@@ -147,30 +129,6 @@ export const POST = async (request: Request) => {
       }
     }
 
-    if (
-      error instanceof GitHubRateLimitError ||
-      (error &&
-        typeof error === "object" &&
-        "name" in error &&
-        error.name === "GitHubRateLimitError")
-    ) {
-      const errObj = error as {
-        resetTime?: { toISOString: () => string };
-        message?: string;
-      };
-      const oneHourMs = GITHUB_APP_CACHE_TTL * 1000;
-      return NextResponse.json(
-        {
-          error: "rate_limit",
-          resetTime: errObj.resetTime
-            ? errObj.resetTime.toISOString()
-            : new Date(Date.now() + oneHourMs).toISOString(),
-          message: errObj.message || "GitHub API Rate Limit Exceeded",
-        },
-        { status: 403 },
-      );
-    }
-    const message = getFriendlyErrorMessage(error, "Failed to fetch user");
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleGithubRouteError(error, "Failed to fetch user");
   }
 };
