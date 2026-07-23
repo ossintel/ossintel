@@ -34,6 +34,19 @@ for (const [cat, keywords] of Object.entries(TOPIC_MAPPINGS)) {
   );
 }
 
+/** Helper to match topics from search text using the pre-compiled regex cache */
+const matchTopicsFromText = (searchStr: string): Set<string> => {
+  const matchedCats = new Set<string>();
+  for (const [cat, regexes] of Object.entries(compiledRegexCache)) {
+    for (const rx of regexes) {
+      if (rx.test(searchStr)) {
+        matchedCats.add(cat);
+      }
+    }
+  }
+  return matchedCats;
+};
+
 /**
  * Compute topic expertise scores by aggregating signals across
  * GitHub repos, PRs, npm packages, and Stack Overflow tags.
@@ -72,14 +85,7 @@ export const calculateSkills = (inputs: SkillsInputs): TopicExpertise[] => {
   // Aggregate GitHub PR metrics
   for (const c of externalContributions) {
     const searchStr = `${c.repoFullName} ${c.title} ${c.labels.join(" ")}`;
-    const matchedCats = new Set<string>();
-    for (const [cat, regexes] of Object.entries(compiledRegexCache)) {
-      for (const rx of regexes) {
-        if (rx.test(searchStr)) {
-          matchedCats.add(cat);
-        }
-      }
-    }
+    const matchedCats = matchTopicsFromText(searchStr);
     for (const cat of matchedCats) {
       skillsMap[cat].githubPrs += 1;
     }
@@ -89,14 +95,7 @@ export const calculateSkills = (inputs: SkillsInputs): TopicExpertise[] => {
   if (npmUser?.packages) {
     for (const pkg of npmUser.packages) {
       const searchStr = `${pkg.name} ${pkg.description || ""} ${pkg.categories.join(" ")}`;
-      const matchedCats = new Set<string>();
-      for (const [cat, regexes] of Object.entries(compiledRegexCache)) {
-        for (const rx of regexes) {
-          if (rx.test(searchStr)) {
-            matchedCats.add(cat);
-          }
-        }
-      }
+      const matchedCats = matchTopicsFromText(searchStr);
       for (const cat of matchedCats) {
         skillsMap[cat].npmPackages += 1;
         skillsMap[cat].npmDownloads += pkg.weeklyDownloads;

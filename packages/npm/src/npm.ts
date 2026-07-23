@@ -26,9 +26,8 @@ const escapePackageName = (name: string): string => {
   return encodeURIComponent(name);
 };
 
-interface NpmPackageVersion {
+interface CommonNpmFields {
   name: string;
-  version: string;
   description?: string | null;
   keywords?: string[];
   homepage?: string | null;
@@ -36,6 +35,10 @@ interface NpmPackageVersion {
   bugs?: string | { url: string } | null;
   repository?: string | { url: string } | null;
   maintainers?: Array<{ username: string }>;
+}
+
+interface NpmPackageVersion extends CommonNpmFields {
+  version: string;
   deprecated?: boolean | string;
   type?: string;
   types?: string;
@@ -43,15 +46,7 @@ interface NpmPackageVersion {
   exports?: unknown;
 }
 
-interface NpmRegistryPackage {
-  name: string;
-  description?: string | null;
-  keywords?: string[];
-  homepage?: string | null;
-  license?: string | null;
-  bugs?: string | { url: string } | null;
-  repository?: string | { url: string } | null;
-  maintainers?: Array<{ username: string }>;
+interface NpmRegistryPackage extends CommonNpmFields {
   versions?: Record<string, NpmPackageVersion>;
   time?: Record<string, string>;
   "dist-tags"?: Record<string, string>;
