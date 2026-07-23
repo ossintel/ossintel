@@ -17,7 +17,7 @@ import { GitHubHttpError, GitHubRateLimitError } from "./types";
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch;
 
-function createHeaders(headersList?: Record<string, string>) {
+const createHeaders = (headersList?: Record<string, string>) => {
   const headerMap = new Map<string, string>();
   if (headersList) {
     for (const [key, val] of Object.entries(headersList)) {
@@ -27,7 +27,7 @@ function createHeaders(headersList?: Record<string, string>) {
   return {
     get: (name: string) => headerMap.get(name.toLowerCase()) ?? null,
   } as any;
-}
+};
 
 beforeEach(() => {
   mockFetch.mockReset();

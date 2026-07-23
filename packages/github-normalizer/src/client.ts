@@ -1,17 +1,24 @@
 import {
+  DEFAULT_PER_PAGE,
+  GITHUB_API_VERSION,
+  GITHUB_BASE_URL,
+  MS_PER_SECOND,
+  RADIX_DECIMAL,
+} from "./constants";
+import {
   type GitHubFetchOptions,
   GitHubHttpError,
   GitHubRateLimitError,
 } from "./types";
 
-function getRequestConfig(options?: GitHubFetchOptions) {
+const getRequestConfig = (options?: GitHubFetchOptions) => {
   const token =
     options?.token ?? process.env["GITHUB_TOKEN"] ?? process.env["GITHUB_PAT"];
-  const baseUrl = options?.baseUrl ?? "https://api.github.com";
+  const baseUrl = options?.baseUrl ?? GITHUB_BASE_URL;
 
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
+    "X-GitHub-Api-Version": GITHUB_API_VERSION,
   };
 
   if (token) {
@@ -19,12 +26,12 @@ function getRequestConfig(options?: GitHubFetchOptions) {
   }
 
   return { baseUrl, headers };
-}
+};
 
-async function performRequest(
+const performRequest = async (
   url: string,
   headers: Record<string, string>,
-): Promise<Response> {
+): Promise<Response> => {
   const response = await fetch(url, { headers });
 
   const limitHeader = response.headers.get("x-ratelimit-limit");
@@ -33,9 +40,13 @@ async function performRequest(
 
   if (response.status === 403 || response.status === 429) {
     if (remainingHeader === "0" && resetHeader) {
-      const limit = limitHeader ? Number.parseInt(limitHeader, 10) : 0;
-      const remaining = Number.parseInt(remainingHeader, 10);
-      const resetTime = new Date(Number.parseInt(resetHeader, 10) * 1000);
+      const limit = limitHeader
+        ? Number.parseInt(limitHeader, RADIX_DECIMAL)
+        : 0;
+      const remaining = Number.parseInt(remainingHeader, RADIX_DECIMAL);
+      const resetTime = new Date(
+        Number.parseInt(resetHeader, RADIX_DECIMAL) * MS_PER_SECOND,
+      );
       throw new GitHubRateLimitError(
         limit,
         remaining,
@@ -55,12 +66,12 @@ async function performRequest(
   }
 
   return response;
-}
+};
 
-export async function githubFetch<T>(
+export const githubFetch = async <T>(
   endpoint: string,
   options?: GitHubFetchOptions,
-): Promise<T> {
+): Promise<T> => {
   const { baseUrl, headers } = getRequestConfig(options);
 
   const url =
@@ -70,17 +81,17 @@ export async function githubFetch<T>(
 
   const response = await performRequest(url, headers);
   return response.json() as Promise<T>;
-}
+};
 
-export async function githubFetchAll<T>(
+export const githubFetchAll = async <T>(
   endpoint: string,
   options?: GitHubFetchOptions,
-): Promise<T[]> {
+): Promise<T[]> => {
   const { baseUrl, headers } = getRequestConfig(options);
   const allResults: T[] = [];
   let nextUrl: string | null = null;
 
-  const perPage = options?.perPage ?? 100;
+  const perPage = options?.perPage ?? DEFAULT_PER_PAGE;
   const page = options?.page;
 
   let currentUrl = endpoint;
@@ -124,4 +135,4 @@ export async function githubFetchAll<T>(
   } while (nextUrl);
 
   return allResults;
-}
+};

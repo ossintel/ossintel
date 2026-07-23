@@ -1,4 +1,10 @@
 import { githubFetch, githubFetchAll } from "./client";
+import {
+  DEFAULT_EXTERNAL_CONTRIBS_LIMIT,
+  DEFAULT_PINNED_LIMIT,
+  GITHUB_MAX_SEARCH_PAGES,
+  GITHUB_SEARCH_PAGE_SIZE,
+} from "./constants";
 import type {
   GitHubFetchOptions,
   LinkedIdentitySuggestions,
@@ -17,119 +23,111 @@ import type {
   RawGitHubUser,
 } from "./types";
 
-function normalizeDeveloper(raw: RawGitHubUser): NormalizedDeveloper {
-  return {
-    id: raw.id,
-    login: raw.login,
-    name: raw.name ?? null,
-    avatarUrl: raw.avatar_url,
-    htmlUrl: raw.html_url,
-    type: raw.type,
-    company: raw.company ?? null,
-    blog: raw.blog ?? null,
-    location: raw.location ?? null,
-    email: raw.email ?? null,
-    bio: raw.bio ?? null,
-    twitterUsername: raw.twitter_username ?? null,
-    publicRepos: raw.public_repos ?? 0,
-    publicGists: raw.public_gists ?? 0,
-    followers: raw.followers ?? 0,
-    following: raw.following ?? 0,
-    createdAt: raw.created_at,
-    updatedAt: raw.updated_at,
-  };
-}
+const normalizeDeveloper = (raw: RawGitHubUser): NormalizedDeveloper => ({
+  id: raw.id,
+  login: raw.login,
+  name: raw.name ?? null,
+  avatarUrl: raw.avatar_url,
+  htmlUrl: raw.html_url,
+  type: raw.type,
+  company: raw.company ?? null,
+  blog: raw.blog ?? null,
+  location: raw.location ?? null,
+  email: raw.email ?? null,
+  bio: raw.bio ?? null,
+  twitterUsername: raw.twitter_username ?? null,
+  publicRepos: raw.public_repos ?? 0,
+  publicGists: raw.public_gists ?? 0,
+  followers: raw.followers ?? 0,
+  following: raw.following ?? 0,
+  createdAt: raw.created_at,
+  updatedAt: raw.updated_at,
+});
 
-function normalizeRepository(raw: RawGitHubRepository): NormalizedRepository {
-  return {
-    id: raw.id,
-    name: raw.name,
-    fullName: raw.full_name,
-    owner: {
-      login: raw.owner?.login ?? "",
-      id: raw.owner?.id ?? 0,
-      avatarUrl: raw.owner?.avatar_url ?? "",
-      type: raw.owner?.type ?? "",
-    },
-    htmlUrl: raw.html_url,
-    description: raw.description ?? null,
-    isFork: raw.fork ?? false,
-    createdAt: raw.created_at,
-    updatedAt: raw.updated_at,
-    pushedAt: raw.pushed_at,
-    homepage: raw.homepage ?? null,
-    size: raw.size ?? 0,
-    stargazersCount: raw.stargazers_count ?? 0,
-    watchersCount: raw.watchers_count ?? 0,
-    language: raw.language ?? null,
-    forksCount: raw.forks_count ?? 0,
-    openIssuesCount: raw.open_issues_count ?? 0,
-    defaultBranch: raw.default_branch ?? "main",
-    topics: raw.topics ?? [],
-    isArchived: raw.archived ?? false,
-  };
-}
+const normalizeRepository = (
+  raw: RawGitHubRepository,
+): NormalizedRepository => ({
+  id: raw.id,
+  name: raw.name,
+  fullName: raw.full_name,
+  owner: {
+    login: raw.owner?.login ?? "",
+    id: raw.owner?.id ?? 0,
+    avatarUrl: raw.owner?.avatar_url ?? "",
+    type: raw.owner?.type ?? "",
+  },
+  htmlUrl: raw.html_url,
+  description: raw.description ?? null,
+  isFork: raw.fork ?? false,
+  createdAt: raw.created_at,
+  updatedAt: raw.updated_at,
+  pushedAt: raw.pushed_at,
+  homepage: raw.homepage ?? null,
+  size: raw.size ?? 0,
+  stargazersCount: raw.stargazers_count ?? 0,
+  watchersCount: raw.watchers_count ?? 0,
+  language: raw.language ?? null,
+  forksCount: raw.forks_count ?? 0,
+  openIssuesCount: raw.open_issues_count ?? 0,
+  defaultBranch: raw.default_branch ?? "main",
+  topics: raw.topics ?? [],
+  isArchived: raw.archived ?? false,
+});
 
-function normalizeOrganization(
+const normalizeOrganization = (
   raw: RawGitHubOrganization,
-): NormalizedOrganization {
-  return {
-    id: raw.id,
-    login: raw.login,
-    name: raw.name ?? null,
-    description: raw.description ?? null,
-    avatarUrl: raw.avatar_url,
-    htmlUrl: raw.html_url,
-    location: raw.location ?? null,
-    email: raw.email ?? null,
-    blog: raw.blog ?? null,
-    twitterUsername: raw.twitter_username ?? null,
-    publicRepos: raw.public_repos ?? 0,
-    followers: raw.followers ?? 0,
-    createdAt: raw.created_at,
-    updatedAt: raw.updated_at,
-  };
-}
+): NormalizedOrganization => ({
+  id: raw.id,
+  login: raw.login,
+  name: raw.name ?? null,
+  description: raw.description ?? null,
+  avatarUrl: raw.avatar_url,
+  htmlUrl: raw.html_url,
+  location: raw.location ?? null,
+  email: raw.email ?? null,
+  blog: raw.blog ?? null,
+  twitterUsername: raw.twitter_username ?? null,
+  publicRepos: raw.public_repos ?? 0,
+  followers: raw.followers ?? 0,
+  createdAt: raw.created_at,
+  updatedAt: raw.updated_at,
+});
 
-function normalizeContributor(
+const normalizeContributor = (
   raw: RawGitHubContributor,
-): NormalizedContributor {
-  return {
-    id: raw.id,
-    login: raw.login,
-    avatarUrl: raw.avatar_url,
-    htmlUrl: raw.html_url,
-    type: raw.type ?? "User",
-    contributions: raw.contributions ?? 0,
-  };
-}
+): NormalizedContributor => ({
+  id: raw.id,
+  login: raw.login,
+  avatarUrl: raw.avatar_url,
+  htmlUrl: raw.html_url,
+  type: raw.type ?? "User",
+  contributions: raw.contributions ?? 0,
+});
 
-function normalizeRelease(raw: RawGitHubRelease): NormalizedRelease {
-  return {
-    id: raw.id,
-    name: raw.name ?? null,
-    tagName: raw.tag_name,
-    targetCommitish: raw.target_commitish,
-    body: raw.body ?? null,
-    draft: raw.draft ?? false,
-    prerelease: raw.prerelease ?? false,
-    createdAt: raw.created_at,
-    publishedAt: raw.published_at ?? null,
-    htmlUrl: raw.html_url,
-    author: raw.author
-      ? {
-          login: raw.author.login,
-          id: raw.author.id,
-          avatarUrl: raw.author.avatar_url,
-        }
-      : null,
-  };
-}
+const normalizeRelease = (raw: RawGitHubRelease): NormalizedRelease => ({
+  id: raw.id,
+  name: raw.name ?? null,
+  tagName: raw.tag_name,
+  targetCommitish: raw.target_commitish,
+  body: raw.body ?? null,
+  draft: raw.draft ?? false,
+  prerelease: raw.prerelease ?? false,
+  createdAt: raw.created_at,
+  publishedAt: raw.published_at ?? null,
+  htmlUrl: raw.html_url,
+  author: raw.author
+    ? {
+        login: raw.author.login,
+        id: raw.author.id,
+        avatarUrl: raw.author.avatar_url,
+      }
+    : null,
+});
 
-async function getOwnerType(
+const getOwnerType = async (
   owner: string,
   options?: GitHubFetchOptions,
-): Promise<"User" | "Organization"> {
+): Promise<"User" | "Organization"> => {
   try {
     const rawProfile = await githubFetch<RawGitHubUser>(
       `/users/${owner}`,
@@ -139,12 +137,12 @@ async function getOwnerType(
   } catch {
     return "User";
   }
-}
+};
 
-export async function fetchDeveloper(
+export const fetchDeveloper = async (
   username?: string,
   options?: GitHubFetchOptions,
-): Promise<NormalizedDeveloper> {
+): Promise<NormalizedDeveloper> => {
   const endpoint = username ? `/users/${username}` : "/user";
   const raw = await githubFetch<RawGitHubUser>(endpoint, options);
 
@@ -171,12 +169,12 @@ export async function fetchDeveloper(
     ...dev,
     socialLinks,
   };
-}
+};
 
-export async function fetchRepositories(
+export const fetchRepositories = async (
   owner?: string,
   options?: GitHubFetchOptions,
-): Promise<NormalizedRepository[]> {
+): Promise<NormalizedRepository[]> => {
   let endpoint: string;
   if (owner) {
     const ownerType = await getOwnerType(owner, options);
@@ -190,24 +188,24 @@ export async function fetchRepositories(
 
   const raws = await githubFetchAll<RawGitHubRepository>(endpoint, options);
   return raws.map(normalizeRepository);
-}
+};
 
-export async function fetchRepository(
+export const fetchRepository = async (
   owner: string,
   repo: string,
   options?: GitHubFetchOptions,
-): Promise<NormalizedRepository> {
+): Promise<NormalizedRepository> => {
   const raw = await githubFetch<RawGitHubRepository>(
     `/repos/${owner}/${repo}`,
     options,
   );
   return normalizeRepository(raw);
-}
+};
 
-export async function fetchOrganizations(
+export const fetchOrganizations = async (
   username?: string,
   options?: GitHubFetchOptions,
-): Promise<NormalizedOrganization[]> {
+): Promise<NormalizedOrganization[]> => {
   const endpoint = username ? `/users/${username}/orgs` : "/user/orgs";
   const briefOrgs = await githubFetchAll<RawGitHubOrganization>(
     endpoint,
@@ -221,64 +219,64 @@ export async function fetchOrganizations(
   );
 
   return detailedOrgs.map(normalizeOrganization);
-}
+};
 
-export async function fetchContributors(
+export const fetchContributors = async (
   owner: string,
   repo: string,
   options?: GitHubFetchOptions,
-): Promise<NormalizedContributor[]> {
+): Promise<NormalizedContributor[]> => {
   const raws = await githubFetchAll<RawGitHubContributor>(
     `/repos/${owner}/${repo}/contributors`,
     options,
   );
   return raws.map(normalizeContributor);
-}
+};
 
-export async function fetchLanguages(
+export const fetchLanguages = async (
   owner: string,
   repo: string,
   options?: GitHubFetchOptions,
-): Promise<NormalizedLanguage[]> {
+): Promise<NormalizedLanguage[]> => {
   const raw = await githubFetch<Record<string, number>>(
     `/repos/${owner}/${repo}/languages`,
     options,
   );
   return Object.entries(raw).map(([name, bytes]) => ({ name, bytes }));
-}
+};
 
-export async function fetchReleases(
+export const fetchReleases = async (
   owner: string,
   repo: string,
   options?: GitHubFetchOptions,
-): Promise<NormalizedRelease[]> {
+): Promise<NormalizedRelease[]> => {
   const raws = await githubFetchAll<RawGitHubRelease>(
     `/repos/${owner}/${repo}/releases`,
     options,
   );
   return raws.map(normalizeRelease);
-}
+};
 
-export async function fetchOrganization(
+export const fetchOrganization = async (
   login: string,
   options?: GitHubFetchOptions,
-): Promise<NormalizedOrganization> {
+): Promise<NormalizedOrganization> => {
   const raw = await githubFetch<RawGitHubOrganization>(
     `/orgs/${login}`,
     options,
   );
   return normalizeOrganization(raw);
-}
+};
 
-export async function fetchPinnedRepositories(
+export const fetchPinnedRepositories = async (
   login: string,
   isOrg: boolean,
   options?: GitHubFetchOptions,
-): Promise<string[]> {
+): Promise<string[]> => {
   const query = `
     query {
       ${isOrg ? `organization(login: "${login}")` : `user(login: "${login}")`} {
-        pinnedItems(first: 6, types: REPOSITORY) {
+        pinnedItems(first: ${DEFAULT_PINNED_LIMIT}, types: REPOSITORY) {
           nodes {
             ... on Repository {
               name
@@ -296,7 +294,8 @@ export async function fetchPinnedRepositories(
     "";
 
   try {
-    const res = await fetch("https://api.github.com/graphql", {
+    const baseUrl = options?.baseUrl ?? "https://api.github.com";
+    const res = await fetch(`${baseUrl}/graphql`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -314,12 +313,12 @@ export async function fetchPinnedRepositories(
   } catch {
     return [];
   }
-}
+};
 
-export function suggestLinkedIdentities(
+export const suggestLinkedIdentities = (
   developer: NormalizedDeveloper,
   _repositories: NormalizedRepository[],
-): LinkedIdentitySuggestions {
+): LinkedIdentitySuggestions => {
   const suggestions: LinkedIdentitySuggestions = {};
 
   const searchTargets = [
@@ -348,32 +347,35 @@ export function suggestLinkedIdentities(
   };
 
   return suggestions;
-}
+};
 
-export async function fetchExternalContributions(
+export const fetchExternalContributions = async (
   username: string,
-  limit = 10,
+  limit = DEFAULT_EXTERNAL_CONTRIBS_LIMIT,
   options?: GitHubFetchOptions,
-): Promise<NormalizedContribution[]> {
+): Promise<NormalizedContribution[]> => {
   try {
     const firstPageRes = await githubFetch<{
       total_count?: number;
       items?: RawGitHubSearchIssue[];
     }>(
-      `/search/issues?q=type:pr+author:${username}+-user:${username}+is:merged&per_page=100&page=1`,
+      `/search/issues?q=type:pr+author:${username}+-user:${username}+is:merged&per_page=${GITHUB_SEARCH_PAGE_SIZE}&page=1`,
       options,
     );
 
     const items: RawGitHubSearchIssue[] = firstPageRes.items || [];
     const totalCount = firstPageRes.total_count ?? 0;
-    const totalPages = Math.min(10, Math.ceil(totalCount / 100));
+    const totalPages = Math.min(
+      GITHUB_MAX_SEARCH_PAGES,
+      Math.ceil(totalCount / GITHUB_SEARCH_PAGE_SIZE),
+    );
 
     if (totalPages > 1) {
       const pagePromises = [];
       for (let p = 2; p <= totalPages; p++) {
         pagePromises.push(
           githubFetch<{ items?: RawGitHubSearchIssue[] }>(
-            `/search/issues?q=type:pr+author:${username}+-user:${username}+is:merged&per_page=100&page=${p}`,
+            `/search/issues?q=type:pr+author:${username}+-user:${username}+is:merged&per_page=${GITHUB_SEARCH_PAGE_SIZE}&page=${p}`,
             options,
           ).catch((err) => {
             console.error(
@@ -446,15 +448,6 @@ export async function fetchExternalContributions(
             l.includes("doc") || l.includes("typo") || l.includes("readme"),
         );
 
-      const isTest =
-        title.includes("test:") ||
-        title.includes("tests:") ||
-        title.includes("spec:") ||
-        title.includes("unit test") ||
-        labels.some(
-          (l) => l.includes("test") || l.includes("spec") || l.includes("qa"),
-        );
-
       const isChore =
         title.includes("chore:") ||
         title.includes("bump ") ||
@@ -464,6 +457,15 @@ export async function fetchExternalContributions(
             l.includes("chore") ||
             l.includes("dependencies") ||
             l.includes("ci"),
+        );
+
+      const isTest =
+        title.includes("test:") ||
+        title.includes("tests:") ||
+        title.includes("spec:") ||
+        title.includes("unit test") ||
+        labels.some(
+          (l) => l.includes("test") || l.includes("spec") || l.includes("qa"),
         );
 
       if (isDocs) {
@@ -493,4 +495,4 @@ export async function fetchExternalContributions(
     console.error("Failed to fetch external contributions", err);
     return [];
   }
-}
+};

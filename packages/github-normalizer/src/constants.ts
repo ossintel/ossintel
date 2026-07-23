@@ -1,0 +1,9 @@
+export const GITHUB_API_VERSION = "2022-11-28";
+export const GITHUB_BASE_URL = "https://api.github.com";
+export const DEFAULT_PINNED_LIMIT = 6;
+export const GITHUB_SEARCH_PAGE_SIZE = 100;
+export const GITHUB_MAX_SEARCH_PAGES = 10;
+export const MS_PER_SECOND = 1000;
+export const DEFAULT_PER_PAGE = 100;
+export const DEFAULT_EXTERNAL_CONTRIBS_LIMIT = 10;
+export const RADIX_DECIMAL = 10;
