@@ -4,6 +4,26 @@ import type {
   RepositoryScores,
   ScoringInputs,
 } from "@ossintel/scoring";
+import {
+  ACTIVITY_HIGH_THRESHOLD,
+  ACTIVITY_LOW_THRESHOLD,
+  COMMUNITY_LOW_THRESHOLD,
+  COMMUNITY_STRONG_THRESHOLD,
+  HEALTH_EXCELLENT_THRESHOLD,
+  HEALTH_POOR_THRESHOLD,
+  IMPACT_HIGH_THRESHOLD,
+  IMPACT_LOW_THRESHOLD,
+  MAX_DISPLAYED_LACKING_TYPES_PACKAGES,
+  MAX_DISPLAYED_TOP_SKILLS,
+  PORTFOLIO_HEALTH_THRESHOLD,
+  PORTFOLIO_INFLUENCE_THRESHOLD,
+  PORTFOLIO_RISK_THRESHOLD,
+  RISK_HIGH_THRESHOLD,
+  RISK_LOW_THRESHOLD,
+  SKILL_EXPERTISE_THRESHOLD,
+  SO_ACCEPTANCE_RATE_THRESHOLD,
+  SO_ANSWER_COUNT_THRESHOLD,
+} from "./constants";
 import type {
   Finding,
   IdentityInsights,
@@ -22,7 +42,7 @@ export const generateInsights = (
   const recommendations: Recommendation[] = [];
 
   // 1. Risk Rules
-  if (scores.risk > 70) {
+  if (scores.risk > RISK_HIGH_THRESHOLD) {
     findings.push({
       id: "risk_high",
       type: "warning",
@@ -40,7 +60,7 @@ export const generateInsights = (
         "Encourage more contributors to join the maintenance team and actively triage or close older open issues to reduce project risk.",
       priority: "high",
     });
-  } else if (scores.risk < 20) {
+  } else if (scores.risk < RISK_LOW_THRESHOLD) {
     findings.push({
       id: "risk_low",
       type: "highlight",
@@ -53,7 +73,7 @@ export const generateInsights = (
   }
 
   // 2. Activity Rules
-  if (scores.activity < 30) {
+  if (scores.activity < ACTIVITY_LOW_THRESHOLD) {
     findings.push({
       id: "activity_low",
       type: "warning",
@@ -71,7 +91,7 @@ export const generateInsights = (
         "If there are staged changes, publish a new release tag to signal to consumers that the project is still actively watched.",
       priority: "medium",
     });
-  } else if (scores.activity > 80) {
+  } else if (scores.activity > ACTIVITY_HIGH_THRESHOLD) {
     findings.push({
       id: "activity_high",
       type: "highlight",
@@ -84,7 +104,7 @@ export const generateInsights = (
   }
 
   // 3. Health Rules
-  if (scores.health < 40) {
+  if (scores.health < HEALTH_POOR_THRESHOLD) {
     findings.push({
       id: "health_poor",
       type: "warning",
@@ -102,7 +122,7 @@ export const generateInsights = (
         "Introduce stale-issue automation or setup dedicated triaging guidelines to systematically address the issue backlog.",
       priority: "high",
     });
-  } else if (scores.health > 80) {
+  } else if (scores.health > HEALTH_EXCELLENT_THRESHOLD) {
     findings.push({
       id: "health_excellent",
       type: "highlight",
@@ -115,7 +135,7 @@ export const generateInsights = (
   }
 
   // 4. Impact Rules
-  if (scores.impact > 70) {
+  if (scores.impact > IMPACT_HIGH_THRESHOLD) {
     findings.push({
       id: "impact_high",
       type: "highlight",
@@ -125,7 +145,7 @@ export const generateInsights = (
         "This project has achieved high popularity and critical adoption within the open-source ecosystem.",
       score: scores.impact,
     });
-  } else if (scores.impact < 15) {
+  } else if (scores.impact < IMPACT_LOW_THRESHOLD) {
     findings.push({
       id: "impact_low",
       type: "highlight",
@@ -146,7 +166,7 @@ export const generateInsights = (
   }
 
   // 5. Community Rules
-  if (scores.community < 30) {
+  if (scores.community < COMMUNITY_LOW_THRESHOLD) {
     findings.push({
       id: "community_small",
       type: "warning",
@@ -164,7 +184,7 @@ export const generateInsights = (
         "Add descriptive topics, homepage links, and a concise description in repository settings to encourage outside contribution.",
       priority: "medium",
     });
-  } else if (scores.community > 80) {
+  } else if (scores.community > COMMUNITY_STRONG_THRESHOLD) {
     findings.push({
       id: "community_strong",
       type: "highlight",
@@ -317,7 +337,7 @@ export const generateIdentityInsights = (
         category: "community",
         title: "Add TypeScript Declarations",
         description: `Add types to active package(s): ${lackingTS
-          .slice(0, 3)
+          .slice(0, MAX_DISPLAYED_LACKING_TYPES_PACKAGES)
           .map((p) => p.name)
           .join(", ")}. Developers prefer typed libraries.`,
         priority: "low",
@@ -336,8 +356,8 @@ export const generateIdentityInsights = (
     });
 
     if (
-      stackoverflowUser.acceptanceRate >= 80 &&
-      stackoverflowUser.answerCount >= 10
+      stackoverflowUser.acceptanceRate >= SO_ACCEPTANCE_RATE_THRESHOLD &&
+      stackoverflowUser.answerCount >= SO_ANSWER_COUNT_THRESHOLD
     ) {
       findings.push({
         id: "so_high_acceptance",
@@ -351,9 +371,9 @@ export const generateIdentityInsights = (
 
   // Topic Expertise / Skill Radar Findings
   if (scores.skills && scores.skills.length > 0) {
-    const topSkills = scores.skills.slice(0, 3);
+    const topSkills = scores.skills.slice(0, MAX_DISPLAYED_TOP_SKILLS);
     for (const skill of topSkills) {
-      if (skill.score >= 35) {
+      if (skill.score >= SKILL_EXPERTISE_THRESHOLD) {
         const evidenceParts: string[] = [];
         if (skill.evidence.githubStars > 0) {
           evidenceParts.push(`${skill.evidence.githubStars} stars`);
@@ -382,7 +402,7 @@ export const generateIdentityInsights = (
   }
 
   const riskScore = 100 - scores.maintainer;
-  if (riskScore > 60) {
+  if (riskScore > PORTFOLIO_RISK_THRESHOLD) {
     findings.push({
       id: "identity_risk_high",
       type: "warning",
@@ -402,7 +422,7 @@ export const generateIdentityInsights = (
     });
   }
 
-  if (scores.maintainer < 40) {
+  if (scores.maintainer < PORTFOLIO_HEALTH_THRESHOLD) {
     findings.push({
       id: "identity_health_low",
       type: "warning",
@@ -422,7 +442,7 @@ export const generateIdentityInsights = (
     });
   }
 
-  if (scores.influence > 70) {
+  if (scores.influence > PORTFOLIO_INFLUENCE_THRESHOLD) {
     findings.push({
       id: "identity_impact_high",
       type: "highlight",
