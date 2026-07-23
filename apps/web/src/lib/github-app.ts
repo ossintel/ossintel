@@ -1,5 +1,9 @@
 import { unstable_cache } from "next/cache";
 import { App } from "octokit";
+import {
+  GITHUB_APP_CACHE_TTL,
+  GITHUB_APP_PAGE_SIZE,
+} from "./constants-backend";
 
 interface InstallationItem {
   login: string;
@@ -7,7 +11,7 @@ interface InstallationItem {
 }
 
 // 1. Fetch installations list directly from GitHub API
-async function fetchInstallationsRaw(): Promise<InstallationItem[]> {
+const fetchInstallationsRaw = async (): Promise<InstallationItem[]> => {
   const appId = process.env.GITHUB_APP_ID;
   const privateKey = process.env.GITHUB_APP_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
@@ -27,7 +31,7 @@ async function fetchInstallationsRaw(): Promise<InstallationItem[]> {
       privateKey,
     });
     const installations = await app.octokit.paginate("GET /app/installations", {
-      per_page: 100,
+      per_page: GITHUB_APP_PAGE_SIZE,
     });
 
     const list: InstallationItem[] = [];
@@ -47,7 +51,7 @@ async function fetchInstallationsRaw(): Promise<InstallationItem[]> {
     console.error("[GitHub App] Failed to fetch installations list", error);
     return [];
   }
-}
+};
 
 // 2. Wrap installations retrieval in Next.js unstable_cache
 const getCachedInstallationsList = unstable_cache(
@@ -59,35 +63,35 @@ const getCachedInstallationsList = unstable_cache(
   },
   ["github-app-installations"],
   {
-    revalidate: 3600, // Cache for 1 hour
+    revalidate: GITHUB_APP_CACHE_TTL,
     tags: ["github-app-installations"],
   },
 );
 
 // 3. Public API
-export async function getInstallationMap(): Promise<Map<string, number>> {
+export const getInstallationMap = async (): Promise<Map<string, number>> => {
   const list = await getCachedInstallationsList();
   const map = new Map<string, number>();
   for (const item of list) {
     map.set(item.login, item.id);
   }
   return map;
-}
+};
 
-export async function getInstallationId(
+export const getInstallationId = async (
   login: string,
-): Promise<number | undefined> {
+): Promise<number | undefined> => {
   const map = await getInstallationMap();
   const instId = map.get(login.toLowerCase());
   console.log(
     `[GitHub App] Installation lookup for '${login}': ${instId ? `Found (${instId})` : "Not Found"}`,
   );
   return instId;
-}
+};
 
-export async function getInstallationToken(
+export const getInstallationToken = async (
   login: string,
-): Promise<string | undefined> {
+): Promise<string | undefined> => {
   const installationId = await getInstallationId(login);
   if (!installationId) return undefined;
 
@@ -123,4 +127,4 @@ export async function getInstallationToken(
     );
     return undefined;
   }
-}
+};

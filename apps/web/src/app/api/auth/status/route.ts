@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { GITHUB_API_TIMEOUT_MS } from "@/lib/constants-backend";
 import { getDecryptedToken } from "@/lib/cookie-token";
 
 const GITHUB_HEADERS = (token: string) => ({
@@ -9,7 +10,7 @@ const GITHUB_HEADERS = (token: string) => ({
   "User-Agent": "OSSIntel",
 });
 
-export async function GET() {
+export const GET = async () => {
   try {
     const cookieStore = await cookies();
 
@@ -26,7 +27,7 @@ export async function GET() {
         try {
           const userRes = await fetch("https://api.github.com/user", {
             headers: GITHUB_HEADERS(token),
-            signal: AbortSignal.timeout(5000),
+            signal: AbortSignal.timeout(GITHUB_API_TIMEOUT_MS),
           });
 
           if (userRes.ok) {
@@ -39,7 +40,7 @@ export async function GET() {
                 `https://api.github.com/users/${login}/orgs`,
                 {
                   headers: GITHUB_HEADERS(token),
-                  signal: AbortSignal.timeout(5000),
+                  signal: AbortSignal.timeout(GITHUB_API_TIMEOUT_MS),
                 },
               );
 
@@ -76,4 +77,4 @@ export async function GET() {
       organizations: [],
     });
   }
-}
+};

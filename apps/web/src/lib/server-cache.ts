@@ -16,12 +16,12 @@ import {
 } from "@ossintel/github-normalizer";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { formatOrgResponse, formatUserResponse } from "./api-helpers";
-
-// Cache version
-const BACKEND_CACHE_VERSION = 4;
-
-// Auto-update threshold: 7 days
-const AUTO_UPDATE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000;
+import {
+  AUTO_UPDATE_THRESHOLD_MS,
+  BACKEND_CACHE_VERSION,
+  CACHE_SAFETY_NET_TTL,
+  GITHUB_APP_PAGE_SIZE,
+} from "./constants-backend";
 
 interface FetchOptions {
   token?: string;
@@ -31,16 +31,16 @@ interface FetchOptions {
 // 1. DEVELOPER DATA CACHE
 // ----------------------------------------------------
 
-async function fetchDeveloperDataRaw(
+const fetchDeveloperDataRaw = async (
   username: string,
   limit: number,
   options: FetchOptions,
-) {
+) => {
   const developer = await fetchDeveloper(username, options);
   const personalRepos = await fetchRepositories(username, {
     ...options,
     allPages: true,
-    perPage: 100,
+    perPage: GITHUB_APP_PAGE_SIZE,
   });
   const organizations = await fetchOrganizations(username, options);
   let externalContributions: NormalizedContribution[] = [];
@@ -83,14 +83,14 @@ async function fetchDeveloperDataRaw(
     suggestions,
     readme,
   );
-}
+};
 
-export async function getCachedDeveloperData(
+export const getCachedDeveloperData = async (
   username: string,
   limit: number,
   options: FetchOptions,
   forceRefresh = false,
-) {
+) => {
   const cacheTag = `github:user:${username.toLowerCase()}`;
 
   const wrapped = unstable_cache(
@@ -104,7 +104,7 @@ export async function getCachedDeveloperData(
     },
     [`github-user-${username.toLowerCase()}-${limit}`],
     {
-      revalidate: 365 * 24 * 60 * 60, // 365 days safety net
+      revalidate: CACHE_SAFETY_NET_TTL,
       tags: [cacheTag],
     },
   );
@@ -158,27 +158,30 @@ export async function getCachedDeveloperData(
     ...cached.data,
     cachedAt: cached.fetchedAt,
   };
-}
+};
 
 // ----------------------------------------------------
 // 2. ORGANIZATION DATA CACHE
 // ----------------------------------------------------
 
-async function fetchOrganizationDataRaw(login: string, options: FetchOptions) {
+const fetchOrganizationDataRaw = async (
+  login: string,
+  options: FetchOptions,
+) => {
   const org = await fetchOrganization(login, options);
   const repositories = await fetchRepositories(login, {
     ...options,
     allPages: true,
-    perPage: 100,
+    perPage: GITHUB_APP_PAGE_SIZE,
   });
   return formatOrgResponse(org, repositories);
-}
+};
 
-export async function getCachedOrganizationData(
+export const getCachedOrganizationData = async (
   login: string,
   options: FetchOptions,
   forceRefresh = false,
-) {
+) => {
   const cacheTag = `github:org:${login.toLowerCase()}`;
 
   const wrapped = unstable_cache(
@@ -192,7 +195,7 @@ export async function getCachedOrganizationData(
     },
     [`github-org-${login.toLowerCase()}`],
     {
-      revalidate: 365 * 24 * 60 * 60,
+      revalidate: CACHE_SAFETY_NET_TTL,
       tags: [cacheTag],
     },
   );
@@ -241,17 +244,17 @@ export async function getCachedOrganizationData(
     ...cached.data,
     cachedAt: cached.fetchedAt,
   };
-}
+};
 
 // ----------------------------------------------------
 // 3. REPOSITORY DATA CACHE
 // ----------------------------------------------------
 
-async function fetchRepositoryDataRaw(
+const fetchRepositoryDataRaw = async (
   owner: string,
   repo: string,
   options: FetchOptions,
-) {
+) => {
   const repository = await fetchRepository(owner, repo, options);
 
   let contributors: NormalizedContributor[] = [];
@@ -281,14 +284,14 @@ async function fetchRepositoryDataRaw(
     releases,
     languages,
   };
-}
+};
 
-export async function getCachedRepositoryData(
+export const getCachedRepositoryData = async (
   owner: string,
   repo: string,
   options: FetchOptions,
   forceRefresh = false,
-) {
+) => {
   const key = `${owner.toLowerCase()}/${repo.toLowerCase()}`;
   const cacheTag = `github:repo:${key}`;
 
@@ -303,7 +306,7 @@ export async function getCachedRepositoryData(
     },
     [`github-repo-${key}`],
     {
-      revalidate: 365 * 24 * 60 * 60,
+      revalidate: CACHE_SAFETY_NET_TTL,
       tags: [cacheTag],
     },
   );
@@ -319,6 +322,18 @@ export async function getCachedRepositoryData(
   }
 
   const cached = await wrapped();
+  const isWrongVersion = cached.version !== BACKEND_CACHE_VERSION;
+
+  if (isWrongVersion) {
+    const fresh = await fetchRepositoryDataRaw(owner, repo, options);
+    revalidateTag(cacheTag, { expire: 0 });
+    await wrapped();
+    return {
+      ...fresh,
+      cachedAt: Date.now(),
+    };
+  }
+
   const isStale = Date.now() - cached.fetchedAt > AUTO_UPDATE_THRESHOLD_MS;
 
   if (isStale) {
@@ -340,4 +355,4 @@ export async function getCachedRepositoryData(
     ...cached.data,
     cachedAt: cached.fetchedAt,
   };
-}
+};

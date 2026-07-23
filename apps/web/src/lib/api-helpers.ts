@@ -9,13 +9,13 @@ import type {
 import type { RepositoryInsights } from "@ossintel/insights";
 import type { RepositoryScores } from "@ossintel/scoring";
 
-export function formatRepoResponse(
+export const formatRepoResponse = (
   repository: NormalizedRepository,
   scores: RepositoryScores,
   insightsResult: RepositoryInsights,
   languages: NormalizedLanguage[] = [],
-  contributorsCount: number = 0,
-) {
+  contributorsCount = 0,
+) => {
   return {
     type: "repo" as const,
     metadata: {
@@ -43,12 +43,12 @@ export function formatRepoResponse(
     languages,
     contributorsCount,
   };
-}
+};
 
-export function formatOrgResponse(
+export const formatOrgResponse = (
   org: NormalizedOrganization,
   repositories: NormalizedRepository[],
-) {
+) => {
   return {
     type: "org" as const,
     metadata: {
@@ -66,16 +66,16 @@ export function formatOrgResponse(
     },
     repositories,
   };
-}
+};
 
-export function formatUserResponse(
+export const formatUserResponse = (
   developer: NormalizedDeveloper,
   personalRepos: NormalizedRepository[],
   organizations: NormalizedOrganization[],
   externalContributions: NormalizedContribution[],
   suggestions: LinkedIdentitySuggestions,
   readme: string,
-) {
+) => {
   return {
     type: "user" as const,
     metadata: {
@@ -102,12 +102,12 @@ export function formatUserResponse(
     repositories: personalRepos,
     externalContributions,
   };
-}
+};
 
-export function getFriendlyErrorMessage(
+export const getFriendlyErrorMessage = (
   error: unknown,
   defaultMessage: string,
-): string {
+): string => {
   if (!error) return defaultMessage;
 
   const err = error as {
@@ -168,4 +168,4 @@ export function getFriendlyErrorMessage(
   }
 
   return defaultMessage;
-}
+};

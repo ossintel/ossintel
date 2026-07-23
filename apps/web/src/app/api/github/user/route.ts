@@ -4,8 +4,13 @@ import {
 } from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
 import { getFriendlyErrorMessage } from "@/lib/api-helpers";
+import { GITHUB_APP_CACHE_TTL } from "@/lib/constants-backend";
 import { getDecryptedToken } from "@/lib/cookie-token";
-import { getInstallationId, getInstallationToken } from "@/lib/github-app";
+import {
+  getInstallationId,
+  getInstallationMap,
+  getInstallationToken,
+} from "@/lib/github-app";
 import {
   getCachedDeveloperData,
   getCachedOrganizationData,
@@ -13,7 +18,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   let query = "";
   let reqToken = "";
   let limit = Infinity;
@@ -68,11 +73,12 @@ export async function POST(request: Request) {
       console.log(
         `[User API DEBUG] Found ${orgsList.length} organizations in metadata.`,
       );
+      const map = await getInstallationMap();
       for (const org of orgsList) {
         console.log(
           `[User API DEBUG] Checking organization login: '${org.login}'`,
         );
-        const orgInstalled = !!(await getInstallationId(org.login));
+        const orgInstalled = map.has(org.login.toLowerCase());
         console.log(
           `[User API DEBUG] Organization '${org.login}' isAppInstalled: ${orgInstalled}`,
         );
@@ -152,12 +158,13 @@ export async function POST(request: Request) {
         resetTime?: { toISOString: () => string };
         message?: string;
       };
+      const oneHourMs = GITHUB_APP_CACHE_TTL * 1000;
       return NextResponse.json(
         {
           error: "rate_limit",
           resetTime: errObj.resetTime
             ? errObj.resetTime.toISOString()
-            : new Date(Date.now() + 3600 * 1000).toISOString(),
+            : new Date(Date.now() + oneHourMs).toISOString(),
           message: errObj.message || "GitHub API Rate Limit Exceeded",
         },
         { status: 403 },
@@ -166,6 +173,4 @@ export async function POST(request: Request) {
     const message = getFriendlyErrorMessage(error, "Failed to fetch user");
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
-
-// fetchPinnedRepositories is imported from @ossintel/github-normalizer
+};

@@ -34,6 +34,7 @@ const getRootToggleOptions = () => {
     const url = isDefault ? "/docs" : `/docs/${dir}`;
 
     const IconComponent =
+      // biome-ignore lint/performance/noDynamicNamespaceImportAccess: LucideIcons on backend or build time is safe
       (LucideIcons[
         meta.icon as keyof typeof LucideIcons
       ] as LucideIcons.LucideIcon) ?? LucideIcons.LibraryBig;

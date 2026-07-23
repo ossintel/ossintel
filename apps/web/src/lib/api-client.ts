@@ -1,11 +1,11 @@
 import { deleteCacheItem, getCacheItem, setCacheItem } from "@/lib/cache";
 
-export async function fetchWithCache<T>(
+export const fetchWithCache = async <T>(
   cacheKey: string,
   endpoint: string,
   payload: Record<string, unknown>,
   forceRefresh = false,
-): Promise<T> {
+): Promise<T> => {
   if (!forceRefresh) {
     const cached = await getCacheItem<T>(cacheKey);
     if (cached && typeof cached === "object") {
@@ -44,8 +44,8 @@ export async function fetchWithCache<T>(
   }
   await setCacheItem(cacheKey, data);
   return data;
-}
+};
 
-export async function clearCacheItem(cacheKey: string) {
+export const clearCacheItem = async (cacheKey: string) => {
   await deleteCacheItem(cacheKey);
-}
+};
