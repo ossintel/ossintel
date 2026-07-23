@@ -7,11 +7,13 @@ export async function fetchWithCache<T>(
   forceRefresh = false,
 ): Promise<T> {
   if (!forceRefresh) {
-    const cached = await getCacheItem<any>(cacheKey);
-    if (cached) {
-      const isProfile = cached.type === "user" || cached.type === "org";
-      const hasAppInstalledField =
-        cached && typeof cached === "object" && "isAppInstalled" in cached;
+    const cached = await getCacheItem<T>(cacheKey);
+    if (cached && typeof cached === "object") {
+      const isProfile =
+        "type" in cached &&
+        ((cached as { type: string }).type === "user" ||
+          (cached as { type: string }).type === "org");
+      const hasAppInstalledField = "isAppInstalled" in cached;
       // Stale browser cache entry validation (pre-GitHub App version)
       if (!isProfile || hasAppInstalledField) {
         return cached;

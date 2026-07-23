@@ -32,7 +32,7 @@ async function fetchInstallationsRaw(): Promise<InstallationItem[]> {
 
     const list: InstallationItem[] = [];
     for (const inst of installations) {
-      if (inst.account && inst.account.login) {
+      if (inst.account?.login) {
         list.push({
           login: inst.account.login.toLowerCase(),
           id: inst.id,
