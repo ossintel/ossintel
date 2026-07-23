@@ -67,18 +67,39 @@ export const RateLimitWarning: React.FC<RateLimitWarningProps> = ({
         </div>
       </div>
 
-      {/* OAuth Sign In Action */}
-      <div className="border-t border-slate-800/80 pt-4 mt-1 space-y-3">
-        <p className="text-xs text-slate-400">
-          Connect your GitHub account to immediately increase your limit to
-          5,000 requests/hour.
-        </p>
-        <a
-          href="/api/auth/github"
-          className="flex items-center justify-center gap-2 w-full p-2.5 bg-indigo-650 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md text-center"
-        >
-          <GithubIcon className="h-4 w-4 shrink-0" /> Connect GitHub Account
-        </a>
+      {/* OAuth Sign In Action & App Installation */}
+      <div className="border-t border-slate-800/80 pt-4 mt-1 space-y-4">
+        <div className="space-y-2">
+          <p className="text-xs text-slate-400">
+            GitHub rate limit reached. Install the OSSIntel GitHub App for
+            uninterrupted analysis.
+          </p>
+          <a
+            href="https://github.com/apps/ossintel/installations/new"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2.5 w-full p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all shadow-md text-center cursor-pointer"
+          >
+            <GithubIcon className="h-4 w-4 shrink-0" /> Install OSSIntel GitHub
+            App
+          </a>
+        </div>
+
+        <div className="flex items-center gap-2 text-[10px] text-slate-500 font-semibold before:h-px before:bg-slate-800/60 before:flex-1 after:h-px after:bg-slate-800/60 after:flex-1">
+          OR
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[11px] text-slate-500 font-semibold">
+            Connect your personal GitHub account to increase your limits.
+          </p>
+          <a
+            href="/api/auth/github"
+            className="flex items-center justify-center gap-2 w-full p-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-350 hover:text-white rounded-xl text-xs font-bold transition-all shadow-sm text-center"
+          >
+            <GithubIcon className="h-4 w-4 shrink-0" /> Connect Personal Account
+          </a>
+        </div>
       </div>
 
       {onDismiss && (

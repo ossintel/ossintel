@@ -15,6 +15,7 @@ import { RepositoryPortfolio } from "@/components/org/repo-portfolio";
 import { SupplyChain } from "@/components/org/supply-chain";
 import { TechLandscape } from "@/components/org/tech-landscape";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { GitHubAppBanner } from "@/components/ui/github-app-banner";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { useDeveloperScores } from "@/hooks/use-developer-scores";
 import { useGithubUser } from "@/hooks/use-github-user";
@@ -171,6 +172,13 @@ function OrgDashboardContent() {
 
         {fullAnalysisData && !isLoadingCombined && !isFetchingCombined && (
           <div className="space-y-8 animate-fade-in">
+            {!userQuery.data?.isAppInstalled && userQuery.data && (
+              <GitHubAppBanner
+                targetId={userQuery.data.metadata.id}
+                profileLogin={userQuery.data.metadata.login}
+                type="org"
+              />
+            )}
             {/* Navigation Backlinks */}
             <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-900/60 border border-slate-800 rounded-2xl shadow-md">
               <div className="flex flex-wrap items-center gap-3">

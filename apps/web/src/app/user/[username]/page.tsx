@@ -23,6 +23,7 @@ import { RepositoriesTable } from "@/components/dashboard/repositories-table";
 import { SkillRadar } from "@/components/dashboard/skill-radar";
 import { GithubIcon } from "@/components/icons";
 import { ErrorAlert } from "@/components/ui/error-alert";
+import { GitHubAppBanner } from "@/components/ui/github-app-banner";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { SuggestionToast } from "@/components/ui/suggestion-toast";
 import { useDeveloperScores } from "@/hooks/use-developer-scores";
@@ -395,6 +396,13 @@ function UserDashboardContent() {
           clientIntel &&
           !isLoadingCombined && (
             <div className="space-y-8 animate-fade-in">
+              {!userQuery.data.isAppInstalled && (
+                <GitHubAppBanner
+                  targetId={userQuery.data.metadata.id}
+                  profileLogin={userQuery.data.metadata.login}
+                  type="user"
+                />
+              )}
               {/* Status Header Banner */}
               <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-900/60 border border-slate-800 rounded-2xl shadow-md">
                 <div className="flex items-center gap-3">
