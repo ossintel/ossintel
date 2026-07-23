@@ -2,6 +2,7 @@ import { GitHubRateLimitError } from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
 import { getFriendlyErrorMessage } from "@/lib/api-helpers";
 import { getDecryptedToken } from "@/lib/cookie-token";
+import { getInstallationId, getInstallationToken } from "@/lib/github-app";
 import { getCachedOrganizationData } from "@/lib/server-cache";
 
 export const dynamic = "force-dynamic";
@@ -9,17 +10,25 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const { query, token: reqToken, forceRefresh } = await request.json();
-    const token = await getDecryptedToken(reqToken);
-    const options = { token };
-
     const login = query || "";
+
+    // Resolve token: App installation token first, fall back to Cookie PAT
+    let token = await getInstallationToken(login);
+    const isAppInstalled = !!token || !!(await getInstallationId(login));
+    if (!token) {
+      token = await getDecryptedToken(reqToken);
+    }
+    const options = { token };
 
     const result = await getCachedOrganizationData(
       login,
       options,
       forceRefresh,
     );
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      isAppInstalled,
+    });
   } catch (error: unknown) {
     console.error("Organization API failed", error);
     if (

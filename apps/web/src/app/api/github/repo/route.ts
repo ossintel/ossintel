@@ -2,6 +2,7 @@ import { GitHubRateLimitError } from "@ossintel/github-normalizer";
 import { NextResponse } from "next/server";
 import { getFriendlyErrorMessage } from "@/lib/api-helpers";
 import { getDecryptedToken } from "@/lib/cookie-token";
+import { getInstallationToken } from "@/lib/github-app";
 import { getCachedRepositoryData } from "@/lib/server-cache";
 
 export const dynamic = "force-dynamic";
@@ -9,11 +10,15 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const { owner, repo, token: reqToken, forceRefresh } = await request.json();
-    const token = await getDecryptedToken(reqToken);
-    const options = { token };
-
     const ownerName = owner || "";
     const repoName = repo || "";
+
+    // Resolve token: App installation token first, fall back to Cookie PAT
+    let token = await getInstallationToken(ownerName);
+    if (!token) {
+      token = await getDecryptedToken(reqToken);
+    }
+    const options = { token };
 
     const result = await getCachedRepositoryData(
       ownerName,

@@ -20,6 +20,7 @@ export interface UserResponse {
   externalContributions: NormalizedContribution[];
   cachedAt?: number;
   pinnedRepositories?: string[];
+  isAppInstalled?: boolean;
 }
 
 export const useGithubUser = (username: string, limit = 10) => {

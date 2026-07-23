@@ -5,6 +5,7 @@ import {
 import { NextResponse } from "next/server";
 import { getFriendlyErrorMessage } from "@/lib/api-helpers";
 import { getDecryptedToken } from "@/lib/cookie-token";
+import { getInstallationId, getInstallationToken } from "@/lib/github-app";
 import {
   getCachedDeveloperData,
   getCachedOrganizationData,
@@ -31,10 +32,16 @@ export async function POST(request: Request) {
     // Ignore body parsing error
   }
 
-  const token = await getDecryptedToken(reqToken);
-  const options = { token };
   const login = query || "";
   const contribLimit = limit;
+
+  // Resolve token: App installation token first, fall back to Cookie PAT
+  let token = await getInstallationToken(login);
+  const isAppInstalled = !!token || !!(await getInstallationId(login));
+  if (!token) {
+    token = await getDecryptedToken(reqToken);
+  }
+  const options = { token };
 
   try {
     const result = await getCachedDeveloperData(
@@ -43,7 +50,10 @@ export async function POST(request: Request) {
       options,
       forceRefresh,
     );
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...result,
+      isAppInstalled,
+    });
   } catch (error: unknown) {
     console.error("User API failed", error);
     const errMessage = error instanceof Error ? error.message : String(error);
@@ -85,6 +95,7 @@ export async function POST(request: Request) {
           externalContributions: [],
           cachedAt: orgData.cachedAt,
           pinnedRepositories,
+          isAppInstalled,
         };
         return NextResponse.json(mappedUser);
       } catch (orgErr) {
