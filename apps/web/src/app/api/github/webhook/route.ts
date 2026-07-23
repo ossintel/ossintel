@@ -24,7 +24,7 @@ export const POST = async (request: Request) => {
   try {
     const signature = request.headers.get(GITHUB_WEBHOOK_SIGNATURE_HEADER);
     const event = request.headers.get(GITHUB_WEBHOOK_EVENT_HEADER);
-    const secret = process.env.GITHUB_WEBHOOK_SECRET;
+    const secret = process.env.GITHUB_APP_WEBHOOK_SECRET;
 
     const rawBody = await request.text();
 
@@ -46,7 +46,7 @@ export const POST = async (request: Request) => {
       }
     } else {
       console.warn(
-        "[Webhook] GITHUB_WEBHOOK_SECRET is not configured. Skipping signature verification.",
+        "[Webhook] GITHUB_APP_WEBHOOK_SECRET is not configured. Skipping signature verification.",
       );
     }
 
