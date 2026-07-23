@@ -13,21 +13,24 @@ import { useEffect, useState } from "react";
 import { GithubIcon } from "../icons";
 
 interface GitHubAppBannerProps {
-  targetId: number;
   profileLogin: string;
   type: "user" | "org";
+  uninstalledOrgs?: string[];
+  isAppInstalled?: boolean;
 }
 
 export const GitHubAppBanner: React.FC<GitHubAppBannerProps> = ({
-  targetId,
   profileLogin,
   type,
+  uninstalledOrgs = [],
+  isAppInstalled = false,
 }) => {
   const [shouldShow, setShouldShow] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/auth/status", { credentials: "same-origin" })
+    // Cache-busting to prevent Edge browser caching the GET request
+    fetch(`/api/auth/status?t=${Date.now()}`, { credentials: "same-origin" })
       .then((res) => {
         if (!res.ok) return null;
         return res.json();
@@ -36,6 +39,9 @@ export const GitHubAppBanner: React.FC<GitHubAppBannerProps> = ({
         if (!data) return;
 
         const viewerLogin = data.login;
+        const viewerOrgs: string[] = Array.isArray(data.organizations)
+          ? data.organizations
+          : [];
 
         if (type === "user") {
           // Only show banner on user's own profile page
@@ -46,8 +52,11 @@ export const GitHubAppBanner: React.FC<GitHubAppBannerProps> = ({
             setShouldShow(true);
           }
         } else if (type === "org") {
-          // Show on org pages if viewer is logged in (they could be org admins)
-          if (viewerLogin) {
+          // Show on org pages only if the organization belongs to the logged-in user
+          const belongsToViewer = viewerOrgs.includes(
+            profileLogin.toLowerCase(),
+          );
+          if (viewerLogin && belongsToViewer) {
             setShouldShow(true);
           }
         }
@@ -62,7 +71,8 @@ export const GitHubAppBanner: React.FC<GitHubAppBannerProps> = ({
 
   if (loading || !shouldShow) return null;
 
-  const installUrl = `https://github.com/apps/ossintel/installations/new?target_id=${targetId}`;
+  const installUrl = "https://github.com/apps/ossintel/installations/new";
+  const hasUninstalledOrgs = uninstalledOrgs.length > 0;
 
   return (
     <div className="relative p-6 md:p-8 bg-slate-900/90 border border-indigo-500/20 hover:border-indigo-500/40 rounded-3xl overflow-hidden shadow-xl transition-all duration-300 group flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -74,13 +84,16 @@ export const GitHubAppBanner: React.FC<GitHubAppBannerProps> = ({
             <Sparkles className="h-2.5 w-2.5" /> Recommended
           </span>
           <h4 className="text-sm font-extrabold text-slate-100">
-            Install the OSSIntel GitHub App
+            {isAppInstalled && hasUninstalledOrgs
+              ? "Link Your Organizations to OSSIntel"
+              : "Install the OSSIntel GitHub App"}
           </h4>
         </div>
 
         <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-          Authenticate as an installation to unlock full ecosystem insights,
-          higher rate limits, and seamless metrics aggregation.
+          {isAppInstalled && hasUninstalledOrgs
+            ? `The OSSIntel GitHub App is installed on your personal profile, but not on all of your organizations: ${uninstalledOrgs.join(", ")}. Connect them to enable complete ecosystem mapping.`
+            : "Authenticate as an installation to unlock full ecosystem insights, higher rate limits, and seamless metrics aggregation."}
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-[11px] text-slate-300 font-bold">
@@ -116,7 +129,10 @@ export const GitHubAppBanner: React.FC<GitHubAppBannerProps> = ({
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center gap-2.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] text-white text-xs font-black rounded-xl transition-all shadow-lg hover:shadow-indigo-500/10 cursor-pointer"
         >
-          <GithubIcon className="h-4 w-4 shrink-0" /> Install GitHub App
+          <GithubIcon className="h-4 w-4 shrink-0" />{" "}
+          {isAppInstalled && hasUninstalledOrgs
+            ? "Configure Installations"
+            : "Install GitHub App"}
         </a>
       </div>
     </div>

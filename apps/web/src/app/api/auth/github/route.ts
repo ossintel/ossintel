@@ -6,10 +6,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const host = request.headers.get("host") || "localhost:3000";
-  const protocol = host.includes("localhost") ? "http" : "https";
-  const appUrl = `${protocol}://${host}`;
+  const isJsOrg = host.endsWith(".js.org") || host.includes("localhost");
+  const appUrl = `https://${isJsOrg ? "ossintel.js.org" : host}`;
 
-  const isJsOrg = host.includes(".js.org");
   const clientId = isJsOrg
     ? process.env.GITHUB_JS_ORG_CLIENT_ID || process.env.GITHUB_CLIENT_ID
     : process.env.GITHUB_CLIENT_ID;

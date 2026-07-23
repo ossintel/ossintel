@@ -396,11 +396,13 @@ function UserDashboardContent() {
           clientIntel &&
           !isLoadingCombined && (
             <div className="space-y-8 animate-fade-in">
-              {!userQuery.data.isAppInstalled && (
+              {(!userQuery.data.isAppInstalled ||
+                userQuery.data.uninstalledOrgs?.length) && (
                 <GitHubAppBanner
-                  targetId={userQuery.data.metadata.id}
                   profileLogin={userQuery.data.metadata.login}
                   type="user"
+                  uninstalledOrgs={userQuery.data.uninstalledOrgs || []}
+                  isAppInstalled={userQuery.data.isAppInstalled || false}
                 />
               )}
               {/* Status Header Banner */}
