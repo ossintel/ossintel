@@ -1,5 +1,17 @@
 # @ossintel/insights
 
+## 0.1.3
+
+### Patch Changes
+
+- [`d77c312`](https://github.com/ossintel/ossintel/commit/d77c312bed95f378b5c82a9015d8fbb903c61cda) Thanks [@mayank1513](https://github.com/mayank1513)! - Refactor insights generator to use constants for all risk, activity, health, impact, and community thresholds. Extract formatPromptContext helper to eliminate duplication.
+
+- Updated dependencies [[`84c0617`](https://github.com/ossintel/ossintel/commit/84c061727de8b535e9c58110119bd5992860c805), [`292dde5`](https://github.com/ossintel/ossintel/commit/292dde58de31dd33e51b9bc443037cf3ad8af776), [`32b58f8`](https://github.com/ossintel/ossintel/commit/32b58f857a6c89b0665b89f1a5480eb32652d972), [`9a0f854`](https://github.com/ossintel/ossintel/commit/9a0f85481dae141a87a5ba1dcebb8fd70491feb9)]:
+  - @ossintel/github-normalizer@0.1.3
+  - @ossintel/npm@0.0.4
+  - @ossintel/scoring@0.1.3
+  - @ossintel/stackoverflow@0.0.2
+
 ## 0.1.2
 
 ### Patch Changes

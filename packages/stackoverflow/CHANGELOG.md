@@ -1,5 +1,11 @@
 # @ossintel/stackoverflow
 
+## 0.0.2
+
+### Patch Changes
+
+- [`9a0f854`](https://github.com/ossintel/ossintel/commit/9a0f85481dae141a87a5ba1dcebb8fd70491feb9) Thanks [@mayank1513](https://github.com/mayank1513)! - Refactor Stack Overflow user fetcher and client to use arrow functions and define page size and timing constants.
+
 ## 0.0.1
 
 ### Patch Changes

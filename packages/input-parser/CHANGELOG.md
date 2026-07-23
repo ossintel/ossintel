@@ -1,5 +1,11 @@
 # @ossintel/input-parser
 
+## 0.2.1
+
+### Patch Changes
+
+- [`1f59c90`](https://github.com/ossintel/ossintel/commit/1f59c90a9c30577a9ce1b7839582cd7c891b2e53) Thanks [@mayank1513](https://github.com/mayank1513)! - Refactor input parsing helper to use arrow functions and define prefix lengths as constants.
+
 ## 0.2.0
 
 ### Minor Changes

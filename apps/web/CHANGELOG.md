@@ -1,5 +1,19 @@
 # @app/web
 
+## 0.0.3
+
+### Patch Changes
+
+- [`9e9da7e`](https://github.com/ossintel/ossintel/commit/9e9da7e1470c159ac92cc4bc76d8e273bddda9ee) Thanks [@mayank1513](https://github.com/mayank1513)! - Refactor query hooks, IndexedDB cache store, server stale-while-revalidate Cache-Aside wrapper, token resolution, API error response handling, and the dashboard repositories table sorting/filtering UI elements to deduplicate setup logic.
+
+- Updated dependencies [[`84c0617`](https://github.com/ossintel/ossintel/commit/84c061727de8b535e9c58110119bd5992860c805), [`1f59c90`](https://github.com/ossintel/ossintel/commit/1f59c90a9c30577a9ce1b7839582cd7c891b2e53), [`d77c312`](https://github.com/ossintel/ossintel/commit/d77c312bed95f378b5c82a9015d8fbb903c61cda), [`292dde5`](https://github.com/ossintel/ossintel/commit/292dde58de31dd33e51b9bc443037cf3ad8af776), [`32b58f8`](https://github.com/ossintel/ossintel/commit/32b58f857a6c89b0665b89f1a5480eb32652d972), [`9a0f854`](https://github.com/ossintel/ossintel/commit/9a0f85481dae141a87a5ba1dcebb8fd70491feb9)]:
+  - @ossintel/github-normalizer@0.1.3
+  - @ossintel/input-parser@0.2.1
+  - @ossintel/insights@0.1.3
+  - @ossintel/npm@0.0.4
+  - @ossintel/scoring@0.1.3
+  - @ossintel/stackoverflow@0.0.2
+
 ## 0.0.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @ossintel/github-normalizer
 
+## 0.1.3
+
+### Patch Changes
+
+- [`84c0617`](https://github.com/ossintel/ossintel/commit/84c061727de8b535e9c58110119bd5992860c805) Thanks [@mayank1513](https://github.com/mayank1513)! - Refactor developer, repository, organization, release, and client logic to use arrow functions and defined constants.
+
 ## 0.1.2
 
 ### Patch Changes

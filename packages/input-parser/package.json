@@ -2,7 +2,7 @@
   "name": "@ossintel/input-parser",
   "author": "Mayank Kumar Chaudhari <https://mayankchaudhari.com>",
   "private": false,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Lightweight and extensible input query parser for resolving developer, repository, organization, and package paths across multiple ecosystems (GitHub, NPM, StackOverflow, VS Code).",
   "license": "MIT",
   "main": "./dist/index.js",

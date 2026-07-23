@@ -1,5 +1,11 @@
 # @ossintel/npm
 
+## 0.0.4
+
+### Patch Changes
+
+- [`292dde5`](https://github.com/ossintel/ossintel/commit/292dde58de31dd33e51b9bc443037cf3ad8af776) Thanks [@mayank1513](https://github.com/mayank1513)! - Refactor npm client and package/user fetchers to use arrow functions, define timing and download constants, and extract CommonNpmFields interface to deduplicate types.
+
 ## 0.0.3
 
 ### Patch Changes
