@@ -1,4 +1,13 @@
 import { npmApiFetch, npmRegistryFetch } from "./client";
+import {
+  DEFAULT_VERSION,
+  INITIAL_MAX_DOWNLOADS,
+  MS_PER_YEAR,
+  NPM_SEARCH_SIZE,
+  PREFIX_AT_LEN,
+  PREFIX_GIT_PLUS_LEN,
+  SUFFIX_GIT_LEN,
+} from "./constants";
 import type {
   NormalizedNpmPackage,
   NormalizedNpmUser,
@@ -10,12 +19,12 @@ import type {
 /**
  * Clean up a package name to be safe for API calls
  */
-function escapePackageName(name: string): string {
+const escapePackageName = (name: string): string => {
   if (name.startsWith("@")) {
-    return `@${name.slice(1).split("/").map(encodeURIComponent).join("/")}`;
+    return `@${name.slice(PREFIX_AT_LEN).split("/").map(encodeURIComponent).join("/")}`;
   }
   return encodeURIComponent(name);
-}
+};
 
 interface NpmPackageVersion {
   name: string;
@@ -48,18 +57,18 @@ interface NpmRegistryPackage {
   "dist-tags"?: Record<string, string>;
 }
 
-function getBugsUrl(bugs?: string | { url: string } | null): string | null {
+const getBugsUrl = (bugs?: string | { url: string } | null): string | null => {
   if (!bugs) return null;
   return typeof bugs === "string" ? bugs : (bugs.url ?? null);
-}
+};
 
 /**
  * Fetch detailed metrics for a single npm package
  */
-export async function fetchNpmPackage(
+export const fetchNpmPackage = async (
   packageName: string,
   options?: NpmFetchOptions,
-): Promise<NormalizedNpmPackage> {
+): Promise<NormalizedNpmPackage> => {
   const escapedName = escapePackageName(packageName);
 
   // 1. Fetch registry details (full package document to get historical time metadata)
@@ -100,7 +109,7 @@ export async function fetchNpmPackage(
   const latestVersionStr =
     registryData["dist-tags"]?.["latest"] ||
     Object.keys(registryData.versions || {}).pop() ||
-    "1.0.0";
+    DEFAULT_VERSION;
   const latestVersion = registryData.versions?.[latestVersionStr] || {
     name: registryData.name,
     version: latestVersionStr,
@@ -165,7 +174,7 @@ export async function fetchNpmPackage(
   const timeMap = registryData.time || {};
   const createdDate = timeMap["created"] || new Date().toISOString();
   const modifiedDate = timeMap["modified"] || new Date().toISOString();
-  const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+  const oneYearAgo = Date.now() - MS_PER_YEAR;
 
   for (const [ver, dateStr] of Object.entries(timeMap)) {
     if (ver === "created" || ver === "modified") continue;
@@ -189,10 +198,10 @@ export async function fetchNpmPackage(
     repositoryUrl =
       typeof repoRaw === "string" ? repoRaw : (repoRaw.url ?? null);
     if (repositoryUrl?.startsWith("git+")) {
-      repositoryUrl = repositoryUrl.slice(4);
+      repositoryUrl = repositoryUrl.slice(PREFIX_GIT_PLUS_LEN);
     }
     if (repositoryUrl?.endsWith(".git")) {
-      repositoryUrl = repositoryUrl.slice(0, -4);
+      repositoryUrl = repositoryUrl.slice(0, -SUFFIX_GIT_LEN);
     }
   }
 
@@ -224,15 +233,15 @@ export async function fetchNpmPackage(
     categories: keywords,
     description: latestVersion.description ?? registryData.description ?? null,
   };
-}
+};
 
 /**
  * Fetch packages maintained by a user and build user stats
  */
-export async function fetchNpmUser(
+export const fetchNpmUser = async (
   username: string,
   options?: NpmFetchOptions,
-): Promise<NormalizedNpmUser> {
+): Promise<NormalizedNpmUser> => {
   const cleanUsername = username.trim();
   const packages: NormalizedNpmPackage[] = [];
 
@@ -241,7 +250,10 @@ export async function fetchNpmUser(
   try {
     searchRes = await npmRegistryFetch<{
       objects: RawNpmPackageSearchResult[];
-    }>(`/-/v1/search?text=maintainer:${cleanUsername}&size=250`, options);
+    }>(
+      `/-/v1/search?text=maintainer:${cleanUsername}&size=${NPM_SEARCH_SIZE}`,
+      options,
+    );
   } catch (err) {
     console.error(
       `npm Registry search failed for maintainer:${cleanUsername}`,
@@ -274,7 +286,7 @@ export async function fetchNpmUser(
   let totalWeeklyDownloads = 0;
   let totalMonthlyDownloads = 0;
   let activePackagesCount = 0;
-  let maxDownloads = -1;
+  let maxDownloads = INITIAL_MAX_DOWNLOADS;
   let popularPackage: string | null = null;
 
   for (const pkg of packages) {
@@ -299,4 +311,4 @@ export async function fetchNpmUser(
     popularPackage,
     isVerifiedPublisher: packages.length > 0,
   };
-}
+};

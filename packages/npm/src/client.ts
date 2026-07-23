@@ -1,6 +1,7 @@
+import { NPM_API_BASE_URL, NPM_REGISTRY_BASE_URL } from "./constants";
 import { type NpmFetchOptions, NpmHttpError } from "./types";
 
-async function performRequest(url: string): Promise<Response> {
+const performRequest = async (url: string): Promise<Response> => {
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",
@@ -17,13 +18,13 @@ async function performRequest(url: string): Promise<Response> {
   }
 
   return response;
-}
+};
 
-export async function npmRegistryFetch<T>(
+export const npmRegistryFetch = async <T>(
   endpoint: string,
   options?: NpmFetchOptions,
-): Promise<T> {
-  const baseUrl = options?.baseUrl ?? "https://registry.npmjs.org";
+): Promise<T> => {
+  const baseUrl = options?.baseUrl ?? NPM_REGISTRY_BASE_URL;
   const url =
     endpoint.startsWith("http://") || endpoint.startsWith("https://")
       ? endpoint
@@ -31,12 +32,12 @@ export async function npmRegistryFetch<T>(
 
   const response = await performRequest(url);
   return response.json() as Promise<T>;
-}
+};
 
-export async function npmApiFetch<T>(endpoint: string): Promise<T> {
-  const baseUrl = "https://api.npmjs.org";
+export const npmApiFetch = async <T>(endpoint: string): Promise<T> => {
+  const baseUrl = NPM_API_BASE_URL;
   const url = `${baseUrl}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
 
   const response = await performRequest(url);
   return response.json() as Promise<T>;
-}
+};

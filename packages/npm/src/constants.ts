@@ -1,0 +1,11 @@
+export const MS_PER_DAY = 86400000;
+export const DAYS_PER_YEAR = 365;
+export const MS_PER_YEAR = 31536000000; // 365 * 24 * 60 * 60 * 1000
+export const NPM_SEARCH_SIZE = 250;
+export const INITIAL_MAX_DOWNLOADS = -1;
+export const PREFIX_AT_LEN = 1;
+export const PREFIX_GIT_PLUS_LEN = 4;
+export const SUFFIX_GIT_LEN = 4;
+export const DEFAULT_VERSION = "1.0.0";
+export const NPM_REGISTRY_BASE_URL = "https://registry.npmjs.org";
+export const NPM_API_BASE_URL = "https://api.npmjs.org";

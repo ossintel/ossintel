@@ -25,6 +25,7 @@ Read project documentation before implementing anything. Priority:
 - Follow conventional commits
 - Do not add gitmoji (auto added)
 - ensure scopes are valid - refer .commitlintrc.json
+- header must be less than 72 chars and there should be an empty line between header and body
 
 ## Turbo Forge
 
