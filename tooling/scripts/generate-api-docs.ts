@@ -10,7 +10,13 @@ import {
   stat,
 } from "node:fs/promises";
 import path from "node:path";
-import { atomicWrite, createLimiter, readJson, safeRename } from "./utils.ts";
+import {
+  atomicWrite,
+  createLimiter,
+  readJson,
+  safeRename,
+  sanitizeMdx,
+} from "./utils.ts";
 
 const limit = createLimiter(4);
 
@@ -67,9 +73,9 @@ for (const pkgDir of PKG_DOC_DIRS) {
 
   // Copy reference docs
   try {
-    const cutomDocsDir = path.join(pkgPath, "docs");
-    if ((await stat(cutomDocsDir)).isDirectory()) {
-      await cp(path.join(pkgPath, "docs"), path.resolve(outDir, ".."), {
+    const customDocsDir = path.join(pkgPath, "docs");
+    if ((await stat(customDocsDir)).isDirectory()) {
+      await cp(customDocsDir, path.resolve(outDir, ".."), {
         recursive: true,
       });
     }
@@ -86,6 +92,15 @@ for (const pkgDir of PKG_DOC_DIRS) {
       .filter((dir) => /^v\d+$/.test(dir))
       .sort((a, b) => parseInt(b.slice(1), 10) - parseInt(a.slice(1), 10)),
   );
+
+  const versionMetaPath = path.join(outDir, "..", "meta.json");
+  let customVersionMeta: Record<string, unknown> = {};
+  try {
+    customVersionMeta =
+      (await readJson<Record<string, unknown>>(versionMetaPath)) || {};
+  } catch {
+    // No custom meta.json provided in packages/<pkg>/docs
+  }
 
   await Promise.all([
     atomicWrite(
@@ -106,11 +121,12 @@ for (const pkgDir of PKG_DOC_DIRS) {
       ),
     ),
     atomicWrite(
-      path.join(outDir, "..", "meta.json"),
+      versionMetaPath,
       JSON.stringify(
         {
           title: `Version ${pkgJson.version}`,
           description: tagLine,
+          ...customVersionMeta, // Preserves custom "pages" array, titles, and icons from packages/<pkg>/docs/meta.json
         },
         null,
         2,
@@ -151,8 +167,22 @@ const walk = async (
 };
 
 await walk(DOCS_ROOT, async (file) => {
+  let targetFile = file;
   if (file.endsWith(".md")) {
-    await safeRename(file, file.replace(/.md$/, ".mdx"));
+    targetFile = file.replace(/\.md$/, ".mdx");
+    await safeRename(file, targetFile);
+  }
+  // Sanitize only handwritten documentation (overview and custom reference docs outside api/)
+  if (
+    targetFile.endsWith(".mdx") &&
+    !targetFile.includes(`${path.sep}api${path.sep}`) &&
+    !targetFile.includes("/api/")
+  ) {
+    const raw = await readFile(targetFile, "utf-8");
+    const sanitized = sanitizeMdx(raw);
+    if (sanitized !== raw) {
+      await atomicWrite(targetFile, sanitized);
+    }
   }
 });
 

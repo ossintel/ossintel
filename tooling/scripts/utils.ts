@@ -64,7 +64,7 @@ export const existsAsync = async (p: string): Promise<boolean> => {
 export const readJson = async <T = unknown>(p: string): Promise<T | null> => {
   try {
     const content = await readFile(p, "utf-8");
-    return JSON.parse(content) as T;
+    return JSON.parse(stripJsonComments(content)) as T;
   } catch (err) {
     const e = err as NodeJS.ErrnoException;
     if (e.code === "ENOENT") return null;
@@ -144,10 +144,13 @@ export const safeRename = async (from: string, to: string) => {
 };
 
 /**
- * Strip comments from JSONC (VSCode settings format).
+ * Strip single-line and multi-line comments from JSONC, preserving string literals.
  */
 export const stripJsonComments = (content: string) =>
-  content.replace(/\/\/.*$/gm, "");
+  content.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")|(\/\*[\s\S]*?\*\/|\/\/[^\r\n]*)/g,
+    (_match, str) => (str ? str : ""),
+  );
 
 /**
  * Creates a minimal promise concurrency limiter.
@@ -323,4 +326,35 @@ export const prompt = async (question: string, defaultValue?: string) => {
   rl.close();
 
   return answer || defaultValue || "";
+};
+
+/**
+ * Sanitizes unquoted and unfenced curly braces and comparison angle brackets in Markdown/MDX content.
+ * Prevents Next.js / Fumadocs build crashes from prose comparisons (e.g. <10ms, < 5) and JSDoc curly braces.
+ */
+export const sanitizeMdx = (content: string): string => {
+  const codeBlockRegex = /(```[\s\S]*?```|~~~[\s\S]*?~~~)/g;
+  const parts = content.split(codeBlockRegex);
+
+  return parts
+    .map((part, index) => {
+      if (index % 2 === 1) {
+        return part;
+      }
+      const inlineCodeRegex = /(`+[\s\S]*?`+)/g;
+      const subParts = part.split(inlineCodeRegex);
+
+      return subParts
+        .map((subPart, subIndex) => {
+          if (subIndex % 2 === 1) {
+            return subPart;
+          }
+          return subPart
+            .replace(/(?<!\\)\{/g, "\\{")
+            .replace(/(?<!\\)\}/g, "\\}")
+            .replace(/(?<!\\)<(?=[\d\s=])/g, "&lt;");
+        })
+        .join("");
+    })
+    .join("");
 };

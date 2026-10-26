@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -14,7 +14,8 @@
       "!dist",
       "!build",
       "!coverage",
-      "!apps/web/content/docs"
+      "!apps/web/content/docs",
+      "!.forge-meta.json"
     ]
   },
   "formatter": {
@@ -44,6 +45,16 @@
       "tailwindDirectives": true
     }
   },
+  "overrides": [
+    {
+      "includes": ["**/docs/meta.json"],
+      "json": {
+        "parser": {
+          "allowComments": true
+        }
+      }
+    }
+  ],
   "assist": {
     "actions": {
       "source": {

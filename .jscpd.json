@@ -1,18 +1,13 @@
 {
-  "threshold": 5,
-  "reporters": ["console", "ai"],
+  "gitignore": true,
   "ignore": [
-    "**/node_modules/**",
-    "**/dist/**",
-    "**/.turbo/**",
-    "**/.git/**",
-    "**/pnpm-lock.yaml",
     "**/*.md",
-    "**/*.hbs",
     "**/*.json",
+    "**/*.hbs",
+    "pnpm-lock.yaml",
+    "**/__tests__/**",
+    "**/*.test.*",
     "**/tsup.config.ts",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/docs/**"
+    "**/.changeset/**"
   ]
 }

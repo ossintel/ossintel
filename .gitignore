@@ -25,3 +25,5 @@ tsup.config.bundled*
 .turboforge
 
 .gemini
+# Agent memory and scratchpad
+.brain

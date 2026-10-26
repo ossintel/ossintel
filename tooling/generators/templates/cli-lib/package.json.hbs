@@ -3,6 +3,10 @@
   "author": "Mayank Kumar Chaudhari <https://mayankchaudhari.com>",
   "private": false,
   "version": "0.0.0",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "description": "{{description}}",
   "license": "{{license}}",
   "main": "./dist/index.js",
@@ -24,16 +28,18 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/{{owner}}/{{repo}}",
-    "directory": "packages/{{kebabCase fileName}}"
+    "directory": "packages/{{kebabCase pkgDir}}"
   },
   "bugs": "https://github.com/{{owner}}/{{repo}}/issues",
-  "homepage": "https://github.com/{{owner}}/{{repo}}/blob/main/packages/{{kebabCase fileName}}/README.md",
+  "homepage": "https://github.com/{{owner}}/{{repo}}/blob/main/packages/{{kebabCase pkgDir}}/README.md",
   "sideEffects": false,
   "files": [
     "dist/**"
   ],
   "bin": {
-    "{{kebabCase fileName}}": "./dist/cli.mjs"
+    "cli": "./dist/cli.mjs"{{#if scope}},
+    "{{kebabCase scope}}": "./dist/cli.mjs"{{/if}}{{#if hasCustomFileName}},
+    "{{kebabCase fileName}}": "./dist/cli.mjs"{{/if}}
   },
   "scripts": {
     "build": "tsup && gzip -c dist/index.js | wc -c",
