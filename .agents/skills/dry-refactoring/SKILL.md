@@ -1,4 +1,5 @@
 ---
+
 name: dry-refactoring
 description: Guided workflow to eliminate copy-paste duplication detected by jscpd. Refactor clones using extract function, module, constant, or base class strategies.
 ---
@@ -12,7 +13,7 @@ Guided workflow to eliminate copy-paste duplication in source code. Use after ru
 First, run jscpd to identify duplications:
 
 ```bash
-pnpx.cmd jscpd --reporters ai <path>
+pnpm.cmd exec jscpd --reporters ai <path>
 ```
 
 See the **[jscpd](../jscpd/SKILL.md)** skill for full option reference.
@@ -31,14 +32,12 @@ See the **[jscpd](../jscpd/SKILL.md)** skill for full option reference.
 ## Refactoring Strategies
 
 **Extract function** — when the duplicate is a block of logic:
-
 ```ts
 // Before: same block in two places
 // After: shared function called from both places
 ```
 
 **Extract module/utility** — when the duplicate spans multiple files in different domains:
-
 ```ts
 // Move shared logic to a shared utility file and import it
 ```
@@ -48,14 +47,15 @@ See the **[jscpd](../jscpd/SKILL.md)** skill for full option reference.
 **Template/base class** — when the duplicate is structural (e.g., repeated class shape).
 
 Always ensure:
-
 - All call sites are updated, not just the two reported by jscpd
 - Tests still pass after refactoring
 - The extracted abstraction has a clear, descriptive name
+- The re-run uses the same detection flags as the run that found the clone
 
 ## Tips
 
 - Start with clones that have the highest line count — they have the most impact
+- Use the summary's `dup%` column to order the work: a large file with a high share of duplicated lines pays back first
 - A clone between test files may indicate a missing test helper
 - Clones across unrelated modules may signal a missing shared utility
 - Use `--min-lines 10` to filter noise and focus on meaningful duplications

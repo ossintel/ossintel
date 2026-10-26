@@ -33,28 +33,25 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm turbo telemetry disable
-          pnpm typecheck
-          cd apps/web && pnpm next telemetry disable && cd ../..
+
+      - name: Configure npm authentication
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
       - name: Create Release PR or Publish
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
-          publish: pnpm release
-          commit: "chore: update versions"
-          title: "chore: update versions"
+          publish-script: pnpm release
+          commit-message: "chore: update versions"
+          pr-title: "chore: update versions"
+          create-github-releases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
           TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
           TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
-      # New: Create GitHub Releases for each published package
-      - name: Create GitHub Releases
-        if: steps.changesets.outputs.published == 'true'
-        run: pnpm release:github
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Aliases
         if: steps.changesets.outputs.published == 'true'

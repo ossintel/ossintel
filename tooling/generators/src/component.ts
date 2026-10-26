@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { ActionConfig, ActionType, PlopGeneratorConfig } from "plop";
-import { plopUtilsRef } from "./index.mts";
-import { cwd, getPackageDirs, TEMPLATE_DIR } from "./utils.mts";
+import type { ActionType, PlopGeneratorConfig } from "plop";
+import { plopUtilsRef } from "./index.ts";
+import { cwd, getPackageDirs, TEMPLATE_DIR } from "./utils.ts";
 
 const packagesDir = path.resolve(cwd, "packages");
 
@@ -258,10 +258,11 @@ const getActions = (data: InquirerDataType): ActionType[] => {
     ...filesActions,
     {
       type: "append",
+      // @ts-expect-error -- improper type
       pattern: /(?<insertion> component exports)/,
       path: path.resolve(packagesDir, `${parentDir}index.ts`),
       template: 'export * from "./{{kebabCase name}}";',
-    } as ActionConfig,
+    },
   ]);
 };
 

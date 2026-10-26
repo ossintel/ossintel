@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { CACHE_DIR } from "./forge.const.ts";
 import {
   atomicWrite,
+  execFileAsync,
   existsAsync,
   getWorkspacePackages,
   readJson,
@@ -45,6 +46,14 @@ const updateVSCodeScopes = async (scopes: string[]) => {
   await atomicWrite(file, JSON.stringify(json, null, 2));
 };
 
+type CommitlintConfig = {
+  rules?: {
+    "scope-enum"?: [number, string, string[]];
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
 /**
  * Updates commitlint scope enum rule.
  * Uses read/write instead of import mutation to avoid cache issues.
@@ -53,8 +62,7 @@ const updateCommitlint = async (scopes: string[]) => {
   const file = ".commitlintrc.json";
   if (!(await existsAsync(file))) return;
 
-  // biome-ignore lint/suspicious/noExplicitAny: required here
-  const config = await readJson<any>(file);
+  const config = await readJson<CommitlintConfig>(file);
 
   if (!config?.rules?.["scope-enum"]) return;
 
@@ -131,9 +139,12 @@ const main = async () => {
 
     const scopes = packages.map((p) => p.name);
 
-    await updateVSCodeScopes(scopes);
-    await updateCommitlint(scopes);
-    await updateTsPaths(libPackages);
+    await Promise.all([
+      updateVSCodeScopes(scopes),
+      updateCommitlint(scopes),
+      updateTsPaths(libPackages),
+      execFileAsync("pnpm", ["biome", "migrate", "--write"]),
+    ]);
 
     console.info("✅ Workspace sync complete");
   } catch (error) {

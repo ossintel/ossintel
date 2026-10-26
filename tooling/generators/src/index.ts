@@ -1,8 +1,9 @@
 import type { NodePlopAPI } from "plop";
-import { componentGenerator } from "./component.mts";
-import { exampleGenerator } from "./example.mts";
-import { hookGenerator } from "./hook.mts";
-import { packageGenerator } from "./package.mts";
+import { componentGenerator } from "./component.ts";
+import { docsGenerator } from "./docs.ts";
+import { exampleGenerator } from "./example.ts";
+import { hookGenerator } from "./hook.ts";
+import { packageGenerator } from "./package.ts";
 
 export const plopUtilsRef: {
   toKebabPath: (text: string) => string;
@@ -27,4 +28,5 @@ export default async (plop: NodePlopAPI) => {
   plop.setGenerator("hook", hookGenerator);
   plop.setGenerator("pkg", packageGenerator);
   plop.setGenerator("exp", exampleGenerator);
+  plop.setGenerator("docs", docsGenerator);
 };
