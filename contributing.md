@@ -31,12 +31,15 @@ Always use `pnpm.cmd` (do not use npm, yarn, or bare pnpm).
 ## Workflow
 
 ### Branches
+
 Use conventional branch names: `feat/`, `fix/`, `docs/`, `chore/`.
 
 ### Commits
+
 We follow [Conventional Commits](https://www.conventionalcommits.org/), which is enforced by commitlint.
 
 ### Pull Requests
+
 A changeset is required for any package changes. Run `pnpm.cmd changeset` before opening your PR.
 
 <hr />

@@ -50,7 +50,7 @@ export const OpenSourceImpact: React.FC<OpenSourceImpactProps> = ({
   const totalOrgs = uniqueRepos.length;
 
   const maxStars = contributions.reduce(
-    (max, c) => (c.targetRepoStars > max ? c.targetRepoStars : max),
+    (max, c) => Math.max(c.targetRepoStars, max),
     0,
   );
 

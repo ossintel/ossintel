@@ -120,17 +120,17 @@ OSSIntel parses a variety of input query formats using the `@ossintel/input-pars
 
 ### Supported Formats
 
-| Format | Target Type | Example Input |
-| --- | --- | --- |
-| **GitHub Repository** | Repository | `react18-tools/kosha`, `https://github.com/react18-tools/kosha` |
-| **GitHub Organization** | Organization | `org:react18-tools`, `organizations/react18-tools`, `https://github.com/orgs/react18-tools` |
-| **GitHub User** | User / Unknown | `user:octocat`, `octocat`, `https://github.com/octocat` |
-| **NPM Package** | npm Package | `npm:lodash`, `@babel/core`, `https://www.npmjs.com/package/lodash` |
-| **NPM User** | npm Developer | `npm:~isaacs`, `~isaacs`, `https://www.npmjs.com/~isaacs` |
-| **Stack Overflow** | Stack Overflow User | `so:12345`, `https://stackoverflow.com/users/12345/some-user` |
-| **VS Code Extension** | Marketplace Extension | `vscode:publisher/extension` |
-| **Medium Blogs** | Medium User | `medium:@username`, `https://medium.com/@username` |
-| **LeetCode Profiles** | LeetCode User | `leetcode:username` |
+| Format                  | Target Type           | Example Input                                                                               |
+| ----------------------- | --------------------- | ------------------------------------------------------------------------------------------- |
+| **GitHub Repository**   | Repository            | `react18-tools/kosha`, `https://github.com/react18-tools/kosha`                             |
+| **GitHub Organization** | Organization          | `org:react18-tools`, `organizations/react18-tools`, `https://github.com/orgs/react18-tools` |
+| **GitHub User**         | User / Unknown        | `user:octocat`, `octocat`, `https://github.com/octocat`                                     |
+| **NPM Package**         | npm Package           | `npm:lodash`, `@babel/core`, `https://www.npmjs.com/package/lodash`                         |
+| **NPM User**            | npm Developer         | `npm:~isaacs`, `~isaacs`, `https://www.npmjs.com/~isaacs`                                   |
+| **Stack Overflow**      | Stack Overflow User   | `so:12345`, `https://stackoverflow.com/users/12345/some-user`                               |
+| **VS Code Extension**   | Marketplace Extension | `vscode:publisher/extension`                                                                |
+| **Medium Blogs**        | Medium User           | `medium:@username`, `https://medium.com/@username`                                          |
+| **LeetCode Profiles**   | LeetCode User         | `leetcode:username`                                                                         |
 
 ## AI-assisted Development
 

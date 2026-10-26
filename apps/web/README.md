@@ -65,13 +65,13 @@ The web app is a thin presentation layer — no scoring, no data fetching logic 
 
 ## Routes
 
-| Route | Purpose |
-|-------|---------|
-| `(home)/` | Landing + search |
-| `user/[username]/` | Developer intelligence |
+| Route                  | Purpose                 |
+| ---------------------- | ----------------------- |
+| `(home)/`              | Landing + search        |
+| `user/[username]/`     | Developer intelligence  |
 | `repo/[owner]/[name]/` | Repository intelligence |
-| `docs/[[...slug]]/` | Documentation |
-| `api/` | API endpoints |
+| `docs/[[...slug]]/`    | Documentation           |
+| `api/`                 | API endpoints           |
 
 ## Tech Stack
 

@@ -2,6 +2,7 @@ import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata } from "next";
 import "./global.css";
 import { Inter } from "next/font/google";
+import { name } from "@/meta.json";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -18,7 +19,7 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    template: "%s | OSSIntel",
+    template: `%s | ${name}`,
     default: "OSSIntel - Open Source Intelligence Audit Platform",
   },
   description:
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     type: "website",
-    siteName: "OSSIntel",
+    siteName: name,
     locale: "en_US",
     title: "OSSIntel - Open Source Intelligence Audit Platform",
     description: "Evaluate developer portfolios and codebase health robustly.",
